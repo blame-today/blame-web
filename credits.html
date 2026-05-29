@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>credits — blame.today</title>
+  <meta name="description" content="who and what made blame.today possible — open source dependencies, fonts, music, and services we lean on." />
+
+  <meta property="og:title" content="credits — blame.today" />
+  <meta property="og:description" content="open source deps, fonts, music, and services that built this." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --yellow: #FFE74C;
+      --red:    #FF3B3B;
+      --teal:   #4ECDC4;
+      --ink:    #000;
+      --paper:  #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      opacity: 0.10;
+      pointer-events: none;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+      position: relative;
+    }
+    h1 {
+      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 56px;
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .tagline {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-block;
+      padding: 6px 14px;
+      transform: rotate(-1.5deg);
+      margin: 8px 0 20px;
+    }
+    .lede {
+      font-weight: 600;
+      font-size: 17px;
+      max-width: 600px;
+      margin: 8px 0 28px;
+    }
+    h2 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 24px;
+      margin: 36px 0 10px;
+    }
+    .card {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 14px 0;
+    }
+    .card.teal { background: var(--teal); }
+    table.credits {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    table.credits th, table.credits td {
+      text-align: left;
+      padding: 8px 12px 8px 0;
+      vertical-align: top;
+      border-bottom: 1.5px solid rgba(0,0,0,0.12);
+    }
+    table.credits tr:last-child td { border-bottom: none; }
+    table.credits th {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    table.credits td:first-child { font-weight: 700; }
+    table.credits td.lic {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 13px;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    a:hover { color: var(--red); }
+    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    strong { font-weight: 700; }
+    em { font-style: italic; font-weight: 600; }
+
+    .sibling-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 22px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sibling-strip a {
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      padding: 4px 10px;
+      text-decoration: none;
+    }
+    .sibling-strip a:hover { background: var(--red); color: var(--paper); }
+    .sibling-strip a.current { background: var(--ink); color: var(--paper); }
+
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); text-align: center; opacity: 0.7; }
+    footer .footer-tagline { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main>
+    <p class="small"><a href="/">← back</a></p>
+    <h1>credits</h1>
+    <div class="tagline">who built the pieces this is built on</div>
+
+    <div class="sibling-strip" aria-label="related pages">
+      <a href="/what.html">what →</a>
+      <a href="/why.html">why →</a>
+      <a href="/how.html">how →</a>
+      <a href="/who.html">who →</a>
+      <a href="/costs.html">costs →</a>
+      <a href="/credits.html" class="current">credits →</a>
+      <a href="/privacy.html">privacy →</a>
+      <a href="/terms.html">terms →</a>
+    </div>
+
+    <div class="lede">
+      blame.today is mostly stitched together from other people's work.
+      open source libraries, public fonts, free music, free cloud tiers.
+      this page is the inventory — what we use, who made it, and what
+      license it's under. if you spot a mistake, tell us and we'll fix
+      it on the public ledger of git history.
+    </div>
+
+    <h2 id="oss">open source libraries</h2>
+    <div class="card">
+      <table class="credits">
+        <thead>
+          <tr><th>package</th><th>used for</th><th class="lic">license</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://github.com/GigaBitcoin/secp256k1.swift">swift-secp256k1</a></td>
+            <td>BIP-340 Schnorr keypair + signing on iOS — every nostr vote event signed with this</td>
+            <td class="lic">MIT</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a></td>
+            <td>Schnorr signing + nostr event helpers on the worker side</td>
+            <td class="lic">MIT</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/PeculiarVentures/x509">@peculiar/x509</a></td>
+            <td>X.509 cert parsing + chain verification (App Attest validation)</td>
+            <td class="lic">Apache-2.0</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/kriszyp/cbor-x">cbor-x</a></td>
+            <td>CBOR decode of Apple's attestation + assertion objects</td>
+            <td class="lic">MIT</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/rbuckton/reflect-metadata">reflect-metadata</a></td>
+            <td>polyfill needed by @peculiar/x509's dependency injection</td>
+            <td class="lic">Apache-2.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="fonts">fonts</h2>
+    <div class="card">
+      <p>
+        all three faces are from Google Fonts under the
+        <a href="https://openfontlicense.org/">SIL Open Font License</a>.
+        attribution isn't required for redistribution, but the names belong
+        in any credits list:
+      </p>
+      <table class="credits">
+        <thead><tr><th>font</th><th>used for</th><th class="lic">license</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><a href="https://fonts.google.com/specimen/Oswald">Oswald</a> — Vernon Adams</td>
+            <td>display + section headers (the chunky uppercase look)</td>
+            <td class="lic">OFL</td>
+          </tr>
+          <tr>
+            <td><a href="https://fonts.google.com/specimen/Space+Grotesk">Space Grotesk</a> — Florian Karsten</td>
+            <td>body copy across the site</td>
+            <td class="lic">OFL</td>
+          </tr>
+          <tr>
+            <td><a href="https://fonts.google.com/specimen/JetBrains+Mono">JetBrains Mono</a> — JetBrains</td>
+            <td>monospace blocks: code snippets, the verify protocol, the visitor key</td>
+            <td class="lic">OFL</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        the iOS app uses Impact (system font, ships with iOS) for the
+        same display role Oswald plays on the web.
+      </p>
+    </div>
+
+    <h2 id="music">music</h2>
+    <div class="card">
+      <p>
+        intentionally bad elevator muzak, synthesized programmatically
+        in pure Python (no external audio libraries — just <code>math</code>,
+        <code>wave</code>, and <code>struct</code>). a sine + 2nd-harmonic
+        vibraphone with 6 Hz vibrato over a triangle bass, two short
+        chord progressions:
+      </p>
+      <table class="credits">
+        <thead><tr><th>loop</th><th>chord progression</th><th>tempo · length</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>compose-loop</td>
+            <td>16 bars, two 8-bar phrases. A: Cmaj7 → Am7 → Dm7 → G7 ×2. B: Cmaj7 → Em7 → Fmaj7 → Dm7 → Cmaj7 → Am7 → Dm7 → G7</td>
+            <td>80 BPM · 48s</td>
+          </tr>
+          <tr>
+            <td>result-loop</td>
+            <td>16 bars + walking melody. A: Fmaj7 → Bbmaj7 → C7 → Fmaj7 ×2. B: Dm7 → Gm7 → C7 → Fmaj7 → Bbmaj7 → C7 → Dm7 → Fmaj7</td>
+            <td>100 BPM · 38s</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="small">
+        source: <a href="https://github.com/blame-today/blame/blob/main/scripts/generate-elevator-music.py">scripts/generate-elevator-music.py</a>.
+        re-runnable + deterministic — tweak the progressions or
+        synthesis params and rebuild the .wav files. no attribution
+        needed; the muzak is ours, for better or worse.
+      </p>
+    </div>
+
+    <h2 id="services">cloud services</h2>
+    <div class="card">
+      <table class="credits">
+        <thead><tr><th>service</th><th>used for</th><th class="lic">tier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><a href="https://workers.cloudflare.com/">Cloudflare Workers</a></td>
+            <td>edge compute — every request hits a Worker running our code</td>
+            <td class="lic">free</td>
+          </tr>
+          <tr>
+            <td><a href="https://developers.cloudflare.com/d1/">Cloudflare D1</a></td>
+            <td>SQLite at the edge — votes, daily rollup, trending, attestations</td>
+            <td class="lic">free</td>
+          </tr>
+          <tr>
+            <td><a href="https://developers.cloudflare.com/workers-ai/">Cloudflare Workers AI</a></td>
+            <td>LLM inference for entity extraction from news headlines (llama-3.1-8b)</td>
+            <td class="lic">free</td>
+          </tr>
+          <tr>
+            <td><a href="https://pages.cloudflare.com/">Cloudflare Pages</a></td>
+            <td>this marketing site — static hosting, global CDN</td>
+            <td class="lic">free</td>
+          </tr>
+          <tr>
+            <td><a href="https://developer.apple.com/app-attest/">Apple App Attest</a></td>
+            <td>per-install attestation that binds /vote requests to real Apple devices</td>
+            <td class="lic">Apple SDK</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="small">
+        line-by-line costs at <a href="/costs.html">/costs.html</a>.
+      </p>
+    </div>
+
+    <h2 id="data-sources">data sources</h2>
+    <div class="card">
+      <p>
+        the daily seeding pulls public RSS feeds + Wikipedia pageviews.
+        each contributes weighted attention to the seeded leaderboard
+        rows. weights and methodology are documented at
+        <a href="/how.html#show-your-work">how → show your work</a>.
+      </p>
+      <table class="credits">
+        <thead><tr><th>source</th><th>used for</th><th class="lic">access</th></tr></thead>
+        <tbody>
+          <tr><td>Yahoo News RSS</td><td>headline ingest</td><td class="lic">public RSS</td></tr>
+          <tr><td>Google News RSS</td><td>headline ingest</td><td class="lic">public RSS</td></tr>
+          <tr><td>Reddit /r/news, /r/worldnews, /r/politics, /r/technology</td><td>headline ingest</td><td class="lic">public RSS</td></tr>
+          <tr><td><a href="https://wikimedia.org/api/rest_v1/">Wikipedia Pageviews API</a></td><td>top-pageview entity weighting + canonical pool source</td><td class="lic">public API</td></tr>
+          <tr><td><a href="https://en.wikipedia.org/api/rest_v1/">Wikipedia REST page/summary API</a></td><td>per-entity one-sentence "who/what is this" descriptions on the tap-row context sheet</td><td class="lic">public API</td></tr>
+          <tr><td><a href="https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words">LDNOOBW</a> — Shutterstock</td><td>open-standard English profanity / slur list, used for the pool whole-label filter + the worker's freeform-input vulgarity check</td><td class="lic">MIT</td></tr>
+          <tr><td><a href="https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/feature_extraction/_stop_words.py">scikit-learn ENGLISH_STOP_WORDS</a> (originally <a href="http://ir.dcs.gla.ac.uk/resources/linguistic_utils/stop_words">Glasgow IR Group</a>)</td><td>~318-entry English stopword list, used for fuzzy-merge token-subset matching ("the-dmv" ↔ "dmv", etc.)</td><td class="lic">BSD-3-Clause</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="models">LLM models</h2>
+    <div class="card">
+      <p>
+        the seeding pipeline runs entity extraction + PII checks through
+        small open-weights LLMs hosted on Cloudflare Workers AI.
+        currently single-model; the council pattern (multi-model
+        consensus) is planned — see
+        <a href="/how.html#show-your-work">how →</a>.
+      </p>
+      <table class="credits">
+        <thead><tr><th>model</th><th>used for</th><th class="lic">license</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>@cf/meta/llama-3.1-8b-instruct</code></td>
+            <td>headline → blameable entity extraction</td>
+            <td class="lic">Llama Community License</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="protocol">protocol</h2>
+    <div class="card">
+      <p>
+        every vote becomes a signed event published to a set of public
+        nostr relays. nostr is an open protocol; the relays are run by
+        volunteers and organizations independent of blame.today. we owe
+        them visibility:
+      </p>
+      <table class="credits">
+        <thead><tr><th>relay</th><th>operator</th></tr></thead>
+        <tbody>
+          <tr><td>wss://relay.damus.io</td><td>Damus</td></tr>
+          <tr><td>wss://nos.lol</td><td>nos.lol</td></tr>
+          <tr><td>wss://relay.nostr.band</td><td>Nostr.band</td></tr>
+          <tr><td>wss://relay.snort.social</td><td>Snort</td></tr>
+          <tr><td>wss://relay.primal.net</td><td>Primal</td></tr>
+          <tr><td>wss://offchain.pub</td><td>offchain.pub</td></tr>
+          <tr><td>wss://nostr.mom</td><td>nostr.mom</td></tr>
+        </tbody>
+      </table>
+      <p>
+        protocol spec: <a href="https://github.com/nostr-protocol/nips">nostr NIPs</a>. core spec is
+        <a href="https://github.com/nostr-protocol/nips/blob/master/01.md">NIP-01</a>.
+      </p>
+    </div>
+
+    <h2 id="ai-assist">AI assistance</h2>
+    <div class="card">
+      <p>
+        the code, the architecture writeup, and most of the surface copy
+        were paired with <a href="https://www.anthropic.com/claude">Claude</a>
+        (Anthropic) over many sessions. the human in the loop is one
+        person. the AI was a force multiplier on shipping, not the
+        author of the project — but pretending it wasn't there would be
+        dishonest. git history's <code>Co-Authored-By</code> lines name
+        it explicitly per commit.
+      </p>
+    </div>
+
+    <h2 id="thanks">thanks</h2>
+    <div class="card teal">
+      <p>
+        every project of this shape relies on a community of people who
+        published their work for someone else to use. the libraries
+        above, the fonts, the relay operators, Kevin MacLeod for putting
+        a careers' worth of music under a permissive license. building
+        for nearly nothing is only possible because they did the harder
+        work first.
+      </p>
+    </div>
+
+    <footer>
+      <div class="footer-tagline">anonymous · permanent · one blame per device per day</div>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>what is blame.today</title>
+  <meta name="description" content="a daily anonymous blame board. one tap on what you'd blame today. signed to a public nostr ledger anyone can verify. no logins, no algorithm, no UGC." />
+
+  <meta property="og:title" content="what is blame.today" />
+  <meta property="og:description" content="a daily anonymous blame board. one tap, public ledger, no logins." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --yellow: #FFE74C;
+      --red:    #FF3B3B;
+      --teal:   #4ECDC4;
+      --ink:    #000;
+      --paper:  #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      opacity: 0.10;
+      pointer-events: none;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+      position: relative;
+    }
+    h1 {
+      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 64px;
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .tagline {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-block;
+      padding: 6px 14px;
+      transform: rotate(-1.5deg);
+      margin: 8px 0 20px;
+    }
+    .lede {
+      font-weight: 600;
+      font-size: 17px;
+      max-width: 600px;
+      margin: 8px 0 28px;
+    }
+    h2 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 28px;
+      margin: 40px 0 12px;
+    }
+    h3 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      margin: 24px 0 8px;
+    }
+    p { margin: 8px 0 14px; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    .card {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .card.teal { background: var(--teal); }
+    .card.red { background: var(--red); color: var(--paper); }
+    .card.red a { color: var(--paper); }
+    .card h3 { margin-top: 4px; }
+    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    a:hover { color: var(--red); }
+    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* sibling-page nav strip at the top */
+    .sibling-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 22px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sibling-strip a {
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      padding: 4px 10px;
+      text-decoration: none;
+    }
+    .sibling-strip a:hover { background: var(--red); color: var(--paper); }
+    .sibling-strip a.current { background: var(--ink); color: var(--paper); }
+
+    /* in-page nav — grouped TOC */
+    .toc {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 24px 0 28px;
+    }
+    .toc-label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 13px;
+      opacity: 0.7;
+      margin-bottom: 10px;
+    }
+    .toc-groups { display: grid; gap: 14px; }
+    @media (min-width: 700px) {
+      .toc-groups { grid-template-columns: repeat(3, 1fr); }
+    }
+    .toc-group-label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+    .toc-group a {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      padding: 2px 0;
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+    }
+    .toc-group a:hover {
+      border-bottom-color: var(--red);
+      color: var(--red);
+    }
+
+    .back-to-top {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      background: var(--red);
+      color: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      border-radius: 50%;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 38px;
+      text-align: center;
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.05s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .back-to-top.visible { opacity: 0.95; pointer-events: auto; }
+    .back-to-top:hover { background: var(--ink); color: var(--paper); }
+    .back-to-top:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+    strong { font-weight: 700; }
+    em { font-style: italic; font-weight: 600; }
+    .pullquote {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      background: var(--paper);
+      border-left: 8px solid var(--red);
+      padding: 20px 22px;
+      margin: 22px 0;
+    }
+    .nondolist {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin: 20px 0;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .nondolist ul { list-style: none; padding: 0; margin: 0; column-count: 2; column-gap: 22px; }
+    @media (max-width: 540px) { .nondolist ul { column-count: 1; } }
+    .nondolist li:before { content: "× "; color: var(--red); font-weight: 700; }
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); text-align: center; opacity: 0.7; }
+    footer .footer-tagline { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    footer .footer-id { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; }
+    footer .footer-id .label { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; opacity: 0.7; margin-right: 6px; }
+    footer .key-display { cursor: pointer; border-bottom: 1px dotted currentColor; user-select: all; transition: color 0.15s ease; }
+    footer .key-display:hover { color: var(--red); }
+    footer .key-display.copied { color: var(--red); border-bottom-color: var(--red); }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main id="top">
+    <p class="small"><a href="/">← back</a></p>
+    <h1>what is blame.today</h1>
+    <div class="tagline">a daily anonymous blame board</div>
+
+    <div class="sibling-strip" aria-label="related pages">
+      <a href="/what.html" class="current">what →</a>
+      <a href="/why.html">why →</a>
+      <a href="/how.html">how →</a>
+      <a href="/who.html">who →</a>
+      <a href="/costs.html">costs →</a>
+      <a href="/credits.html">credits →</a>
+      <a href="/privacy.html">privacy →</a>
+      <a href="/terms.html">terms →</a>
+    </div>
+
+    <div class="lede">
+      each day you can cast one vote on what you'd blame the world for
+      today. that vote becomes part of a public, signed, permanent
+      ledger anyone can verify. then tomorrow rolls around and you can
+      do it again.
+    </div>
+    <div class="lede">
+      this page is the surface answer: <em>what is this thing, what's
+      blameable, what stays private, what we don't do.</em> for the
+      reasoning behind these choices see <a href="/why.html">why →</a>;
+      for the architecture see <a href="/how.html">how →</a>; for the
+      identity model see <a href="/who.html">who →</a>.
+    </div>
+
+    <div class="pullquote">one tap. one device. one day.<br/>then come back tomorrow.</div>
+
+    <nav class="toc" aria-label="in this page">
+      <div class="toc-label">in this page →</div>
+      <div class="toc-groups">
+        <div class="toc-group">
+          <div class="toc-group-label">the surface</div>
+          <a href="#blame">what counts as a blame</a>
+          <a href="#public">what's blameable publicly</a>
+          <a href="#private">what stays private</a>
+        </div>
+        <div class="toc-group">
+          <div class="toc-group-label">the negative space</div>
+          <a href="#nondo">what we DON'T do</a>
+          <a href="#not-ugc">why this isn't UGC</a>
+        </div>
+        <div class="toc-group">
+          <div class="toc-group-label">the property</div>
+          <a href="#property">anonymous + permanent</a>
+          <a href="#where">where to go next</a>
+        </div>
+      </div>
+    </nav>
+
+    <h2 id="blame">what counts as a "blame"</h2>
+    <p>
+      one tap on an entity. that's it. no comment field, no thread, no
+      photo, no reply. just <em>blame: trump</em> / <em>blame: my
+      landlord</em> / <em>blame: AI</em> / <em>blame: cilantro</em> —
+      whatever resonates today.
+    </p>
+    <p>
+      one vote per device per day, on the UTC clock. then you wait until
+      midnight and you can vote again on whatever has resonated by then.
+      the app shows a countdown when you've voted; the countdown is
+      anchored to the public ledger, not just a local timer.
+    </p>
+
+    <h2 id="public">what's blameable publicly</h2>
+    <p>
+      anything in our <strong>curated pool</strong> — about 34,000
+      entries drawn from public figures, brands, countries, concepts,
+      and newsworthy entities pulled from the day's headlines. the pool
+      is the union of:
+    </p>
+    <div class="card">
+      <ul>
+        <li><strong>wikipedia top-pageview entries</strong> — filtered
+        for vulgarity, disambig pages, and obvious-PII patterns.</li>
+        <li><strong>daily news entities</strong> — extracted by the
+        worker each morning from ~10 free news sources (yahoo, npr, the
+        guardian, hacker news, reddit subs, etc.) via a small LLM step.</li>
+        <li><strong>prediction-market signal</strong> — top markets
+        from polymarket + kalshi, used as an attention proxy.</li>
+        <li><strong>hand-curated overrides</strong> — abbreviations
+        (BJP → Bharatiya Janata Party), display-label corrections
+        (Drake → the rapper, not the disambig page), known-bad entity
+        ids dropped.</li>
+      </ul>
+    </div>
+    <p>
+      if it's in the pool, your vote lands on the public ledger. if it's
+      <em>not</em> in the pool, your vote stays on your device. the gate
+      is at the pool, not at the vote.
+    </p>
+
+    <h2 id="private">what stays private (on your device)</h2>
+    <p>
+      freeform text that doesn't match a pool entry — your landlord by
+      name, a coworker, the gas station that overcharged you — gets
+      saved <strong>locally on your iphone only</strong>. it does NOT
+      hit our worker, it does NOT get signed to nostr, it does NOT
+      appear on anyone else's leaderboard. it sits in your private
+      vote history on the device. you still see the 24-hour cooldown on
+      it, same as a public vote — the cooldown applies to the user
+      action, not the public surface.
+    </p>
+    <p>
+      this is the "private individuals" carve-out: we don't want to be
+      a platform for naming-and-shaming people who didn't sign up for
+      it. so we let you express the blame, but the public record stays
+      pool-only. the journey to this design is on
+      <a href="/why.html#journey">why → what we wanted vs built</a>.
+    </p>
+
+    <h2 id="nondo">what we DON'T do</h2>
+    <p>
+      a quick map of the negative space — things people expect from "a
+      social app on your phone" that this deliberately isn't:
+    </p>
+    <div class="nondolist">
+      <ul>
+        <li>no logins</li>
+        <li>no accounts</li>
+        <li>no email collection</li>
+        <li>no profile pictures</li>
+        <li>no follows / friends</li>
+        <li>no comments</li>
+        <li>no replies</li>
+        <li>no reactions</li>
+        <li>no DMs</li>
+        <li>no notifications</li>
+        <li>no algorithm</li>
+        <li>no "for you" page</li>
+        <li>no recommendations</li>
+        <li>no story features</li>
+        <li>no live streams</li>
+        <li>no upvote/downvote</li>
+        <li>no shadow-banning</li>
+        <li>no UGC moderation queue</li>
+        <li>no ad SDKs</li>
+        <li>no analytics SDKs</li>
+        <li>no IDFA / advertising ids</li>
+        <li>no third-party trackers</li>
+      </ul>
+    </div>
+    <p>
+      we're a calculator pointed at a daily question, not a social
+      network. one tap per device per day, ranked by simple count, then
+      the app goes away. that's the whole feature surface.
+    </p>
+
+    <h2 id="not-ugc">why this isn't UGC</h2>
+    <p>
+      under Apple's App Store Guideline 1.2, a user-generated-content
+      app needs in-app reporting, a 24-hour response SLA, a moderation
+      queue. that's a real obligation we can't responsibly staff as a
+      hobby project.
+    </p>
+    <p>
+      because <strong>all public votes are constrained to entries from
+      a pre-existing pool we curate</strong>, the app doesn't function
+      as a UGC platform under that guideline. you can't post freeform
+      text to the public surface. the moderation we do is at <em>pool
+      entry</em>, not at votes-after-the-fact. that's a job we can
+      actually do.
+    </p>
+    <p>
+      freeform input that doesn't match a pool entry stays on your
+      device. you can type whatever you want in there; we never see
+      it. it's your private journal of who you'd blame, never leaving
+      the device.
+    </p>
+
+    <h2 id="property">the property we want</h2>
+    <p>
+      <strong>anonymous + permanent + uncensorable.</strong> we (the
+      people running this) can't tell you who voted for what — the
+      worker only sees a sha256 hash of your device id. we can't
+      unpublish a vote that's already on nostr — the protocol holds
+      it on relays we don't control. we can't pull a name from the
+      leaderboard because someone got upset — the math runs on public
+      events anyone can replay.
+    </p>
+    <p>
+      what we CAN do is decide what's eligible for the public ledger
+      (the pool). that's where our moderation lives — entry into the
+      pool, not censorship of votes once cast. <em>cache is opinion;
+      protocol is record.</em>
+    </p>
+
+    <h2 id="where">where to go next</h2>
+    <ul>
+      <li><a href="/why.html">why →</a> — the journey from "anyone
+      types anything" to "curated pool, public ledger." motivation +
+      values + the property we're defending.</li>
+      <li><a href="/how.html">how →</a> — the architecture. vote flow,
+      ledger structure, seeding math, moderation pipeline, attestation
+      chain, user-flow logic. the long page.</li>
+      <li><a href="/who.html">who →</a> — the identity model. how "one
+      device, one vote per day" works without logins. UUID + App
+      Attest stacked.</li>
+      <li><a href="/privacy.html">privacy →</a> — what crosses the
+      wire (almost nothing), what stays on your device (the rest),
+      who else is in the chain (cloudflare, public relays, apple).</li>
+      <li><a href="/terms.html">terms →</a> — use at your own risk,
+      florida law, no UGC, hobby project.</li>
+      <li><a href="/credits.html">credits →</a> — the news sources,
+      libraries, protocols this stands on.</li>
+      <li><a href="/costs.html">costs →</a> — what this costs to run,
+      line by line.</li>
+    </ul>
+
+    <footer>
+      <div class="footer-tagline">anonymous · permanent · one blame per device per day</div>
+      <div class="footer-id"><span class="label">you →</span><span id="visitor-key" class="key-display">…</span></div>
+    </footer>
+  </main>
+
+  <a href="#top" class="back-to-top" id="back-to-top" aria-label="back to top">↑</a>
+  <script>
+    const btn = document.getElementById('back-to-top');
+    if (btn) {
+      window.addEventListener('scroll', () => {
+        btn.classList.toggle('visible', window.scrollY > 600);
+      }, { passive: true });
+    }
+  </script>
+  <script src="/footer.js"></script>
+</body>
+</html>

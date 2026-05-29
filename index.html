@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>blame.today — who do you blame today?</title>
-  <meta name="description" content="anonymous daily public-ledger blame board. one blame per device per day, signed to a public nostr ledger. no logins. no algorithm. no notifications." />
+  <title>blame! — who do you blame.today?</title>
+  <meta name="description" content="one blame per device per day. no logins. anonymous, permanent. blame anyone or anything." />
 
-  <meta property="og:title" content="blame.today — who do you blame today?" />
-  <meta property="og:description" content="one blame per device per day. anonymous. permanent. signed to a public nostr ledger anyone can verify." />
+  <meta property="og:title" content="blame! — who do you blame.today?" />
+  <meta property="og:description" content="one blame per device per day. no logins. anonymous, permanent." />
   <meta property="og:type" content="website" />
 
   <style>
@@ -43,44 +43,20 @@
       padding: 36px 24px 80px;
       position: relative;
     }
-
-    /* Hero — mirrors the iOS app's two-line masthead.
-       Top line: small kicker "WHO DO YOU".
-       Bottom: BLAME.TODAY? with the period as a red visual hook.
-       Same Anton font + tight kerning as the app. */
-    .hero {
-      margin: 0 0 18px;
-    }
-    .kicker {
-      font-family: 'Anton', 'Helvetica Neue', sans-serif;
-      font-weight: 900;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      font-size: 28px;
-      line-height: 1;
-      margin-bottom: -4px;
-    }
     h1 {
-      font-family: 'Anton', 'Helvetica Neue', sans-serif;
-      font-weight: 900;
+      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
+      font-weight: 700;
       font-size: 96px;
       line-height: 0.9;
       letter-spacing: -0.02em;
       text-transform: uppercase;
-      margin: 0;
+      margin: 0 0 8px;
       color: var(--ink);
     }
-    h1 .dot {
-      color: var(--red);
-      /* Oversized period — matches the iOS treatment of the .today
-         wordplay. The dot IS the brand hook. */
-      font-size: 1.35em;
-      vertical-align: -0.06em;
-    }
-
+    h1 .bang { color: var(--red); }
     .tagline {
-      font-family: 'Anton', sans-serif;
-      font-weight: 900;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       font-size: 22px;
@@ -91,9 +67,8 @@
       display: inline-block;
       padding: 6px 14px;
       transform: rotate(-1.5deg);
-      margin: 16px 0 24px;
+      margin: 8px 0 20px;
     }
-
     .lede {
       font-family: 'Space Grotesk', sans-serif;
       font-weight: 600;
@@ -102,8 +77,8 @@
       margin: 8px 0 28px;
     }
     h2 {
-      font-family: 'Anton', sans-serif;
-      font-weight: 900;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       font-size: 32px;
@@ -112,21 +87,21 @@
 
     /* board card */
     .board-wrap { background: var(--teal); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); padding: 16px; margin: 16px 0; position: relative; }
-    .board-header { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Anton', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; margin-bottom: 10px; }
+    .board-header { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; margin-bottom: 10px; }
     .board-rows { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 10px; padding: 6px; }
     .row { display: grid; grid-template-columns: 50px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; margin: 4px 0; background: var(--paper); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 2px 2px 0 var(--ink); }
-    .row .rank { font-family: 'Anton', sans-serif; font-weight: 900; font-size: 20px; }
-    .row .label { font-family: 'Anton', sans-serif; font-weight: 900; text-transform: uppercase; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .rank { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 20px; }
+    .row .label { font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .row .reason { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 700; opacity: 0.55; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
-    .row .count { font-family: 'Anton', sans-serif; font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; }
+    .row .count { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
 
     .pill {
       display: inline-block;
       background: var(--paper);
       border: 2px solid var(--ink);
       box-shadow: 2px 2px 0 var(--ink);
-      font-family: 'Anton', sans-serif;
-      font-weight: 900;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-size: 12px;
@@ -147,55 +122,199 @@
       overflow-x: auto;
     }
 
-    /* AI-content disclaimer block — mirrors the iOS "ai-written ·
-       may misstate" copy. Slightly different visual treatment (left
-       red bar) so it doesn't read as just another box. */
-    .disclaimer {
+    /* per-visitor sampler — three random board entries picked
+       deterministically from your visitor key + today's date */
+    .sampler { margin: 16px 0; }
+    .sampler-header {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 14px;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+    .sampler-rows { display: grid; gap: 8px; }
+    .sampler-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .sampler-row .label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 17px;
+      line-height: 1.1;
+    }
+    .sampler-row .reason {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.55;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .sampler-row .count {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+    .sampler-note {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.7;
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    /* gate (reveal-the-board interstitial) */
+    .gate {
       background: var(--paper);
       border: 3px solid var(--ink);
-      border-left-width: 8px;
-      border-left-color: var(--red);
+      box-shadow: 5px 5px 0 var(--ink);
+      border-radius: 14px;
+      padding: 28px 22px 24px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .gate-text {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 20px;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+    .gate-btn {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 18px;
+      background: var(--red);
+      color: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 8px;
+      padding: 14px 22px;
+      cursor: pointer;
+      margin-bottom: 18px;
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+    .gate-btn:hover { background: var(--ink); }
+    .gate-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+    .gate-note {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.7;
+      max-width: 460px;
+      margin: 0 auto;
+      line-height: 1.45;
+    }
+
+    /* Nav grid — used in "read more" section to point at the W-pages.
+       Each card is a popBox link with a big title + one-line sub. */
+    .navgrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 18px 0 28px;
+    }
+    .navgrid a {
+      display: block;
+      background: var(--paper);
+      border: 3px solid var(--ink);
       box-shadow: 4px 4px 0 var(--ink);
       border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 14px;
-      max-width: 600px;
-      margin: 8px 0 20px;
+      padding: 14px 16px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform 0.08s ease;
     }
+    .navgrid a:hover {
+      transform: translate(-1px, -1px);
+      color: var(--ink);
+    }
+    .navgrid .navtitle {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .navgrid .navsub {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      opacity: 0.75;
+      line-height: 1.35;
+    }
+    @media (max-width: 540px) { .navgrid { grid-template-columns: 1fr; } }
 
     a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
     a:hover { color: var(--red); }
     .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
-
-    /* Smaller hero on narrow screens — the 96px H1 wraps awkwardly
-       under ~360px viewport. Step down so BLAME.TODAY? fits on one
-       line on iPhone SE-class widths. */
-    @media (max-width: 420px) {
-      h1 { font-size: 64px; }
-      .kicker { font-size: 22px; }
-    }
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); text-align: center; opacity: 0.7; }
+    footer .footer-tagline { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    footer .footer-id { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; }
+    footer .footer-id .label { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; opacity: 0.7; margin-right: 6px; }
+    footer .key-display { cursor: pointer; border-bottom: 1px dotted currentColor; user-select: all; transition: color 0.15s ease; }
+    footer .key-display:hover { color: var(--red); }
+    footer .key-display.copied { color: var(--red); border-bottom-color: var(--red); }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
   <main>
-    <div class="hero">
-      <div class="kicker">who do you</div>
-      <h1>blame<span class="dot">.</span>today?</h1>
-    </div>
-    <div class="tagline">anonymous · permanent · one blame per day</div>
+    <h1>blame<span class="bang">!</span></h1>
+    <div class="tagline">who do you blame.today?</div>
 
     <div class="lede">
-      blame.today is a daily anonymous blame board. tap who or what you'd blame today,
-      one vote per device per day, signed to a public nostr ledger anyone can verify in ten seconds.
-      no logins. no feed. no algorithm. no notifications.
+      one blame per device per day. no logins. anonymous. permanent. blame
+      anyone, anything — war, ai, the algorithm, solar flares, mondays.
+      what's your vote today?
+    </div>
+
+    <h2>your daily sampler</h2>
+    <div class="sampler">
+      <div class="sampler-header">three picks from today's board, just for you</div>
+      <div class="sampler-rows" id="sampler-rows">
+        <div class="small">loading…</div>
+      </div>
+      <div class="sampler-note">
+        same picks for you every visit today, different picks for everyone
+        else — chosen by hashing <em>your visitor key + today's date.</em>
+        not the ranking, just a taste. tap the gate below to see today's
+        actual top.
+      </div>
     </div>
 
     <h2>today's board</h2>
-    <div class="board-wrap">
+    <div class="gate" id="gate">
+      <div class="gate-text">blame.today is participatory.<br/>tap to see who's getting blamed today.</div>
+      <button class="gate-btn" id="reveal-btn" type="button">show me today's blame ↓</button>
+      <div class="gate-note">
+        not a real vote — real blames live in the app. and yeah, ok, you don't
+        technically have to tap. the data's public —
+        <a href="#verify">recompute it yourself from the nostr ledger ↓</a>.
+      </div>
+    </div>
+    <div class="board-wrap" id="board-wrap" hidden>
       <div class="board-header">
         <span id="board-day">loading…</span>
         <span class="pill">live</span>
@@ -203,191 +322,73 @@
       <div class="board-rows" id="board-rows"><div class="small">loading…</div></div>
     </div>
 
-    <h2>how this works</h2>
-    <div class="lede">
-      <strong>every vote is a signed nostr event.</strong> our app is one view of the public ledger.
-      cloudflare is a cache. anyone can audit.
-    </div>
-    <div class="arch">vote flow:
-  iOS client signs vote with a per-device nostr keypair (BIP-340 Schnorr)
-    ├─→ publishes signed event to 7 public nostr relays   (the ledger)
-    └─→ POSTs to cloudflare worker → D1 rollup            (the cache)
-
-read path:
-  this page  →  cloudflare worker → D1 → CDN-cached JSON  (fast)
-  auditors   →  any nostr relay   → recompute from events (true)
-
-if the two ever disagree, the public ledger wins. the cache is opinion;
-the relays are the record.</div>
-
-    <h2>tap a row → context</h2>
-    <div class="lede">
-      tap any entity on the leaderboard and the app shows a context sheet: a
-      short blame summary, the headlines driving it this week, and a "more on
-      the web" link for going deeper. headlines are aggregated from rss + text-
-      only news sites (cnn lite, npr text, brutalist report, ddg lite) directly
-      on your device — no centralized news middleman.
-    </div>
-
-    <h2>about the ai summaries</h2>
-    <div class="lede">
-      on apple-intelligence-capable devices (iPhone 15 Pro / 16 / 17, ipad m-series,
-      iOS 26+), the blame summary is generated <strong>on your device</strong> from
-      that week's headlines. nothing about your vote leaves your phone. on older
-      devices the summary comes from a bundled snapshot or from peers' published
-      content via nostr.
-    </div>
-    <div class="disclaimer">
-      <strong>ai-written · may misstate · verify with the headlines.</strong><br>
-      every blame summary is written by an LLM (apple intelligence on your device,
-      claude or llama in the bundle, peer-generated on nostr). LLMs can be
-      confidently wrong. each headline carries its source domain and a date stamp —
-      use those to fact-check.
-    </div>
-
-    <h2>cumulative coverage, deduped</h2>
-    <div class="lede">
-      headlines accumulate over a 7-day window per entity so you get a week of
-      context, not just whatever happened in the last hour. near-duplicate
-      titles ("trump signs tariff bill" vs "tariff bill signed by trump") are
-      collapsed at merge time so a single hot-news event doesn't flush out
-      diverse coverage from earlier in the week.
-    </div>
-    <div class="lede">
-      <strong>how we dedup, honestly:</strong> token-set overlap. we
-      tokenize each headline (lowercase, drop stopwords + tokens under 3
-      chars + pure-numeric), then check if |A ∩ B| / min(|A|, |B|) ≥ 0.65.
-      it catches reword-variants that share vocabulary ("tariff bill signed
-      by trump" / "trump signs tariff bill"). it doesn't catch paraphrases
-      with totally different words ("import duties become law" vs "tariff
-      bill signed"). that's a known limitation — semantic dedup would
-      collapse those but also risks collapsing genuinely-different stories
-      that are topically adjacent, so we picked the safer failure mode.
-      source: <a href="https://github.com/blame-today/blame/blob/main/Blame/Services/EntityRefreshCache.swift">EntityRefreshCache.headlinesAreSimilar</a>.
-    </div>
-
-    <h2>how trending works</h2>
-    <div class="lede">
-      <strong>the news is editorial. we're a calculator pointed at headlines.</strong>
-      the cloudflare worker pulls news from ~10 free sources daily (yahoo,
-      npr, the guardian, hacker news, reddit subs, polymarket, kalshi,
-      wikipedia pageviews), extracts blameable entities from each headline
-      via workers ai, weights each mention by source reach × headline
-      negativity, and writes the top targets into the seeded leaderboard.
-      users layer their votes on top.
-    </div>
-    <div class="arch">formula:
-  attention_units = Σ (source_weight × mention_count)
-                    + wikipedia_pageviews_today
-                    + Σ (market_volume) × calibration_factor
-
-  avg_negativity  = mean of per-headline negativity scores [0..3]
-                    (assigned by workers ai llama-3.2)
-
-  seeded_count    = round(0.001 × attention_units × avg_negativity)
-
-source weights (rough monthly-reach proxy):
-  yahoo news        200,000 / mention
-  npr top stories   100,000
-  the guardian       80,000
-  google news        50,000  (aggregator discount — items already deduped)
-  hacker news        30,000
-  reddit r/news      30,000
-  reddit r/worldnews 30,000
-  reddit r/politics  25,000  (partisan, slight discount)
-  reddit r/technology 20,000
-  wikipedia          actual pageviews (sqrt-compressed above 1M)
-  polymarket/kalshi  market volume × 0.05
-
-implementation: worker/src/index.ts NEWS_SOURCES + extractBlameTargets.
-full explainer + a worked example: blame.today/SEEDING.md</div>
-    <div class="lede">
-      <strong>why is trump on top?</strong> because the news talks about him
-      in negative tones a lot. multiple sources, daily, across categories
-      (politics, courts, markets). high mention count × moderate-to-high
-      negativity = high seeded_count. it's mechanical. if the news talks
-      more about putin tomorrow, putin moves up. we don't hand-pick.
-      <a href="https://github.com/blame-today/blame/blob/main/SEEDING.md">SEEDING.md</a>
-      has the worked example.
-    </div>
-
-    <h2>verify the math</h2>
-    <div class="lede">
-      <strong>we don't ask you to trust us.</strong> here's exactly how to recompute today's
-      leaderboard yourself from the public nostr ledger. if your numbers don't match ours,
-      we're lying. call us out.
-    </div>
-    <div class="arch">protocol: <a href="https://github.com/nostr-protocol/nips/blob/master/01.md">nostr NIP-01</a>, kind 30078 (parameterized replaceable)
-
-filter:
-  {"kinds":[30078], "#d":["blame:vote:&lt;YYYY-MM-DD&gt;"]}
-
-relays we publish to:
-  relay.damus.io      nos.lol           relay.nostr.band
-  relay.snort.social  relay.primal.net  offchain.pub
-  nostr.mom
-
-steps:
-  1. connect to any relay above via WebSocket
-  2. send the filter (see /verify?day=&lt;day&gt; for the exact REQ)
-  3. for each EVENT, parse content as JSON → (pubkey, target)
-  4. group by target. unique pubkey count per target = real_count
-  5. compare to /leaderboard?day=&lt;day&gt;
-
-machine-readable: <a id="verify-link" href="#">/verify?day=&lt;today&gt;</a></div>
-
-    <p class="small">
-      <strong>why this matters:</strong> we don't own the data — the protocol does. you don't have to
-      trust the company, the company can't lie undetectably, and if we shut the worker off tomorrow
-      the votes are still there. that's the property we want.
+    <h2>read more</h2>
+    <p>
+      this is the landing. each of the W-pages picks up one thread of
+      what this thing is, and the deeper coverage lives there. <em>cache
+      is opinion; protocol is record</em> — the property the whole
+      architecture is built around. unpack it whichever angle feels
+      closest:
     </p>
-
-    <h2>running costs</h2>
-    <p>we keep an honest tally of what this costs to run, line by line.
-    <a href="/costs.html">see running costs →</a></p>
+    <div class="navgrid">
+      <a href="/what.html">
+        <div class="navtitle">what</div>
+        <div class="navsub">what's blameable, what stays private, the no-logins / no-algorithm shape</div>
+      </a>
+      <a href="/why.html">
+        <div class="navtitle">why</div>
+        <div class="navsub">the journey from "anyone types anything" to "curated pool, public ledger." motivation + values + the property we're defending</div>
+      </a>
+      <a href="/how.html">
+        <div class="navtitle">how</div>
+        <div class="navsub">the architecture. vote flow, ledger, seeding math, moderation pipeline, attestation chain. the long page</div>
+      </a>
+      <a href="/who.html">
+        <div class="navtitle">who</div>
+        <div class="navsub">the identity model. UUID + App Attest stacked. one device, one vote per day, no logins</div>
+      </a>
+      <a href="/privacy.html">
+        <div class="navtitle">privacy</div>
+        <div class="navsub">what crosses the wire (almost nothing), what stays on your device (the rest), who else is in the chain</div>
+      </a>
+      <a href="/terms.html">
+        <div class="navtitle">terms</div>
+        <div class="navsub">use at your own risk, florida law, no UGC, hobby project</div>
+      </a>
+      <a href="/credits.html">
+        <div class="navtitle">credits</div>
+        <div class="navsub">the news sources, libraries, protocols this stands on</div>
+      </a>
+      <a href="/costs.html">
+        <div class="navtitle">costs</div>
+        <div class="navsub">what running this actually costs, line by line, updated as bills land</div>
+      </a>
+    </div>
 
     <h2>source</h2>
-    <p><a href="https://github.com/blame-today/blame">github.com/blame-today/blame</a> · public, open-source, MIT licensed where we're the author.</p>
+    <p><a href="https://github.com/blame-today">github.com/blame-today</a> — main app repo private during dev; this marketing site is the public face.</p>
 
     <h2>install</h2>
-    <p class="small">iOS app coming to the app store. testflight beta opens once we've got telemetry on the first thousand voters.</p>
+    <p class="small">ios app coming to the app store. testflight beta opens once we've got telemetry on the first thousand voters.</p>
 
     <footer>
-      blame.today · anonymous · unverified · final
+      <div class="footer-tagline">anonymous · permanent · one blame per device per day</div>
+      <div class="footer-id"><span class="label">you →</span><span id="visitor-key" class="key-display">…</span></div>
     </footer>
   </main>
 
   <script>
-    const WORKER_BASE = "https://blame-worker.royashbrook.workers.dev"; // update post-deploy
+    const WORKER_BASE = "https://blame-worker.royashbrook.workers.dev";
+    const SAMPLER_POOL_SIZE = 100;   // shuffle pool — top N entries
+    const SAMPLER_PICKS = 3;         // how many to show
     const today = new Date().toISOString().slice(0, 10);
 
-    async function loadBoard() {
-      const rowsEl = document.getElementById('board-rows');
-      const dayEl = document.getElementById('board-day');
-      dayEl.textContent = today;
-      try {
-        const res = await fetch(`${WORKER_BASE}/leaderboard?day=${today}`);
-        if (!res.ok) throw new Error('http ' + res.status);
-        const data = await res.json();
-        if (!data.rows || data.rows.length === 0) {
-          rowsEl.innerHTML = '<div class="small">no votes yet today. be the first.</div>';
-          return;
-        }
-        rowsEl.innerHTML = data.rows.slice(0, 10).map((r, i) => {
-          const total = r.total_count || 0;
-          return `<div class="row">
-            <div class="rank">#${i + 1}</div>
-            <div>
-              <div class="label">${escapeHTML(r.label)}</div>
-              ${r.trending_reason ? `<div class="reason">${escapeHTML(r.trending_reason)}</div>` : ''}
-            </div>
-            <div class="count">${total.toLocaleString()}</div>
-          </div>`;
-        }).join('');
-      } catch (err) {
-        rowsEl.innerHTML = `<div class="small">board unavailable. worker may be cold or not yet deployed. (${err.message})</div>`;
-      }
-    }
+    // Cache the leaderboard response across sampler + reveal so we only
+    // hit the worker once per page load. CF edge already caches the
+    // response shared across all visitors, but local caching avoids
+    // even that hop when the user taps the gate.
+    let boardData = null;
+    let boardLoadPromise = null;
 
     function escapeHTML(s) {
       return String(s).replace(/[&<>"']/g, c => ({
@@ -395,16 +396,150 @@ machine-readable: <a id="verify-link" href="#">/verify?day=&lt;today&gt;</a></di
       }[c]));
     }
 
-    function wireVerifyLink() {
-      const a = document.getElementById('verify-link');
-      if (a) {
-        a.href = `${WORKER_BASE}/verify?day=${today}`;
-        a.textContent = `/verify?day=${today}`;
+    async function ensureBoardData() {
+      if (boardData) return boardData;
+      if (boardLoadPromise) return boardLoadPromise;
+      boardLoadPromise = (async () => {
+        const res = await fetch(`${WORKER_BASE}/leaderboard?day=${today}`);
+        if (!res.ok) throw new Error('http ' + res.status);
+        boardData = await res.json();
+        return boardData;
+      })();
+      return boardLoadPromise;
+    }
+
+    // --- per-visitor sampler ---
+    //
+    // Goal: same visitor sees the same 3 picks every visit today;
+    // different visitor (or different day) sees different picks.
+    // Deterministic from (visitor_key + day). Pool is top SAMPLER_POOL_SIZE
+    // so picks are interesting entities, not the deep noise tail.
+
+    function getVisitorKey() {
+      // Read the same key footer.js stores. On first-ever visit this might
+      // not exist yet (footer.js runs on DOMContentLoaded too). Fall back
+      // to a session-only key so the sampler still renders.
+      try {
+        const existing = localStorage.getItem('blame.visitor.id');
+        if (existing && /^[0-9a-f]{64}$/.test(existing)) return existing;
+        // Generate + persist (mirrors footer.js logic so first-visit ordering
+        // doesn't matter — whichever script runs first creates the key).
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        try { localStorage.setItem('blame.visitor.id', hex); } catch {}
+        return hex;
+      } catch {
+        // Private mode — ephemeral key
+        return today + ':' + Math.random().toString(36).slice(2);
       }
     }
 
-    loadBoard();
-    wireVerifyLink();
+    // xmur3 string-to-int hash + mulberry32 PRNG. Both standard, deterministic.
+    function xmur3(str) {
+      let h = 1779033703 ^ str.length;
+      for (let i = 0; i < str.length; i++) {
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return () => {
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^ (h >>> 16)) >>> 0;
+      };
+    }
+    function mulberry32(seed) {
+      return () => {
+        seed = (seed + 0x6D2B79F5) | 0;
+        let t = seed;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function seededShuffle(arr, seedStr) {
+      const out = arr.slice();
+      const rand = mulberry32(xmur3(seedStr)());
+      for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      return out;
+    }
+
+    function pickSamplerEntries(rows) {
+      if (!rows || rows.length === 0) return [];
+      const pool = rows.slice(0, SAMPLER_POOL_SIZE);
+      const seed = getVisitorKey() + ':' + today;
+      return seededShuffle(pool, seed).slice(0, SAMPLER_PICKS);
+    }
+
+    async function loadSampler() {
+      const el = document.getElementById('sampler-rows');
+      try {
+        const data = await ensureBoardData();
+        const picks = pickSamplerEntries(data.rows || []);
+        if (picks.length === 0) {
+          el.innerHTML = '<div class="small">no entries yet today. tap the gate below to refresh.</div>';
+          return;
+        }
+        el.innerHTML = picks.map(r => `
+          <div class="sampler-row">
+            <div>
+              <div class="label">${escapeHTML(r.label)}</div>
+              ${r.trending_reason ? `<div class="reason">${escapeHTML(r.trending_reason)}</div>` : ''}
+            </div>
+            <div class="count">${(r.total_count || 0).toLocaleString()}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        el.innerHTML = `<div class="small">sampler unavailable (${err.message})</div>`;
+      }
+    }
+
+    async function renderFullBoard() {
+      const rowsEl = document.getElementById('board-rows');
+      const dayEl = document.getElementById('board-day');
+      if (dayEl) dayEl.textContent = today;
+      try {
+        const data = await ensureBoardData();
+        if (!data.rows || data.rows.length === 0) {
+          rowsEl.innerHTML = '<div class="small">no votes yet today. be the first.</div>';
+          return;
+        }
+        rowsEl.innerHTML = data.rows.slice(0, 10).map((r, i) => `
+          <div class="row">
+            <div class="rank">#${i + 1}</div>
+            <div>
+              <div class="label">${escapeHTML(r.label)}</div>
+              ${r.trending_reason ? `<div class="reason">${escapeHTML(r.trending_reason)}</div>` : ''}
+            </div>
+            <div class="count">${(r.total_count || 0).toLocaleString()}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        rowsEl.innerHTML = `<div class="small">board unavailable. (${err.message})</div>`;
+      }
+    }
+
+    function revealBoard() {
+      const gate = document.getElementById('gate');
+      const wrap = document.getElementById('board-wrap');
+      if (gate) gate.hidden = true;
+      if (wrap) wrap.hidden = false;
+      renderFullBoard();
+    }
+
+    // (The /verify?day=... arch block + its #verify-link wiring lived
+    //  here pre-slim; both moved to how.html where the surrounding
+    //  protocol explainer lives. Landing kept sampler + gate + nav
+    //  only, no inline how-it-works content.)
+
+    const btn = document.getElementById('reveal-btn');
+    if (btn) btn.addEventListener('click', revealBoard);
+    loadSampler();
   </script>
+  <script src="/footer.js"></script>
 </body>
 </html>

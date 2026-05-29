@@ -1,29 +1,43 @@
-# blame marketing site
+# blame.today — marketing site
 
-static HTML for the marketing/web shell. hosted on **GitHub Pages** — really open source.
+Static HTML for **[blame.today](https://blame.today)** — the public face
+of the blame app. Hosted on GitHub Pages from this repo.
 
-## why github pages and not cloudflare pages
+## what's in this repo
 
-- the marketing site lives in a public repo; visiting `view source` gives the whole site
-- cloudflare hosts the worker + the data; github hosts the public-facing page
-- reinforces "blame isn't powered by any single platform — we're a participant"
-- soft 100GB/mo bandwidth on GH Pages is plenty for a marketing page
+- `index.html` — the home page
+- `costs.html` — the running costs ledger (modeled on cushion's)
+- `CNAME` — points GitHub Pages at `blame.today`
 
-## hooks up to
+That's it. Vanilla HTML, vanilla CSS, no build step. The home page
+fetches `https://blame-worker.royashbrook.workers.dev/leaderboard`
+client-side and renders today's board.
 
-- the worker at `BLAME_WORKER_URL` (currently `https://blame-worker.royashbrook.workers.dev` — update post-deploy)
-- the worker's `/leaderboard` and `/trending` endpoints
+## why this is its own repo
+
+The main app code lives at
+[`blame-today/blame`](https://github.com/blame-today/blame) (private during
+dev). This marketing repo is **public** so:
+
+- GitHub Pages can serve it (private repo Pages requires a paid plan)
+- "open source by default" — `view source` in the browser gives you the whole site
+- separation of concerns — marketing changes don't churn the app repo
+
+When we sync changes from the app repo's `web/` directory, copy the
+files here and push.
 
 ## deploy
 
-push to the `gh-pages` branch (or use the gh-pages source = main with `/web` directory):
+Push to `main` and it auto-builds:
 
 ```
-# from repo root, once gh-pages source is set in repo settings:
 git push origin main
 ```
 
-settings → pages → source: main / `/web`
+GitHub Pages auto-publishes from `main` → `blame.today` (via the CNAME).
+DNS at godaddy points `blame.today` → `blame-today.github.io`.
 
-once Pages is wired up the site is live at `https://royashbrook.github.io/blame/`. add a custom
-domain (e.g. `blame.app` or whatever) later.
+## license
+
+MIT. See the [main repo](https://github.com/blame-today/blame) for the
+canonical source + the architecture docs.
