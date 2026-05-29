@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>running costs — blame.today</title>
+  <meta name="description" content="honest tally of what blame.today costs to run, line by line." />
+
+  <meta property="og:title" content="running costs — blame.today" />
+  <meta property="og:description" content="honest tally of what blame.today costs to run." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --yellow: #FFE74C;
+      --red:    #FF3B3B;
+      --teal:   #4ECDC4;
+      --ink:    #000;
+      --paper:  #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      opacity: 0.10;
+      pointer-events: none;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+      position: relative;
+    }
+    h1 {
+      font-family: 'Anton', 'Helvetica Neue', sans-serif;
+      font-weight: 900;
+      font-size: 64px;
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+    .tagline {
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-block;
+      padding: 6px 14px;
+      transform: rotate(-1.5deg);
+      margin: 8px 0 20px;
+    }
+    .lede {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      max-width: 540px;
+      margin: 8px 0 28px;
+    }
+    h2 {
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 22px;
+      margin: 32px 0 12px;
+    }
+    .ledger {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+    .ledger table { border-collapse: collapse; width: 100%; }
+    .ledger th, .ledger td { text-align: left; padding: 2px 12px 2px 0; vertical-align: top; }
+    .ledger th { font-weight: 700; opacity: 0.55; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+    .ledger .cost { font-weight: 700; text-align: right; white-space: nowrap; }
+    .ledger .total { border-top: 2px solid var(--ink); padding-top: 6px; margin-top: 6px; font-weight: 900; font-size: 14px; }
+    .totalbox {
+      background: var(--red);
+      color: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 20px 0;
+    }
+    .totalbox .amt { font-size: 32px; }
+    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    a:hover { color: var(--red); }
+    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; display: flex; justify-content: space-between; }
+    footer a { font-weight: 700; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main>
+    <p class="small"><a href="/">← blame.today</a></p>
+    <h1>running costs</h1>
+    <div class="tagline">honest tally · updated 2026-05-16</div>
+
+    <div class="lede">
+      every line item that goes into running blame.today, in one place.
+      modeled on <a href="https://cushionapp.com/running-costs">cushion's</a>
+      page, which we have always adored. updated as bills land. never
+      reorganized to look cheaper.
+    </div>
+
+    <h2>one-time + annual</h2>
+    <div class="ledger">
+      <table>
+        <thead><tr><th>date</th><th>service</th><th class="cost">cost</th></tr></thead>
+        <tbody>
+          <tr><td>2026-05-16</td><td>blame.today domain (godaddy, 1 yr)</td><td class="cost">$4.19</td></tr>
+          <tr class="total"><td colspan="2">subtotal</td><td class="cost">$4.19</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>monthly recurring</h2>
+    <div class="ledger">
+      <table>
+        <thead><tr><th>service</th><th>tier</th><th class="cost">cost</th></tr></thead>
+        <tbody>
+          <tr><td>Cloudflare Workers</td><td>free · 100k req/day</td><td class="cost">$0</td></tr>
+          <tr><td>Cloudflare D1 (database)</td><td>free · 5gb / 5m reads / 100k writes</td><td class="cost">$0</td></tr>
+          <tr><td>Cloudflare Workers AI</td><td>free · ~10k neurons/day</td><td class="cost">$0</td></tr>
+          <tr><td>Cloudflare Pages (CDN)</td><td>free · unlimited bandwidth</td><td class="cost">$0</td></tr>
+          <tr><td>GitHub</td><td>free · public + private repos, org tier</td><td class="cost">$0</td></tr>
+          <tr><td>7 nostr public relays</td><td>community-operated</td><td class="cost">$0</td></tr>
+          <tr class="total"><td colspan="2">subtotal</td><td class="cost">$0 / mo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>coming up</h2>
+    <div class="ledger">
+      <table>
+        <thead><tr><th>when</th><th>service</th><th class="cost">cost</th></tr></thead>
+        <tbody>
+          <tr><td>before App Store launch</td><td>Apple Developer Program</td><td class="cost">$99 / yr</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totalbox">
+      <span>spent to date</span>
+      <span class="amt">$4.19</span>
+    </div>
+
+    <h2>scale math</h2>
+    <div class="lede">
+      at ~50k daily users, this stays at <strong>$0/mo</strong> on free
+      tiers across the board. at ~333k DAU, ~$5/mo with paid Cloudflare.
+      at 1M DAU, ~$15/mo. at 10M DAU, ~$100/mo. the per-user marginal
+      cost is genuinely tiny — that's the whole architectural point.
+      <br/><br/>
+      this is possible because every layer that scales is multi-provider
+      composable free-tier — read the
+      <a href="https://github.com/blame-today/blame/blob/main/docs/architecture.md">architecture docs</a>
+      for the full breakdown.
+    </div>
+
+    <footer>
+      <span>blame.today · anonymous · permanent · final</span>
+      <span><a href="/">home</a></span>
+    </footer>
+  </main>
+</body>
+</html>

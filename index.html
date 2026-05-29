@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>blame.today — who do you blame today?</title>
+  <meta name="description" content="anonymous daily public-ledger blame board. one blame per device per day, signed to a public nostr ledger. no logins. no algorithm. no notifications." />
+
+  <meta property="og:title" content="blame.today — who do you blame today?" />
+  <meta property="og:description" content="one blame per device per day. anonymous. permanent. signed to a public nostr ledger anyone can verify." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --yellow: #FFE74C;
+      --red:    #FF3B3B;
+      --teal:   #4ECDC4;
+      --ink:    #000;
+      --paper:  #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      opacity: 0.10;
+      pointer-events: none;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+      position: relative;
+    }
+
+    /* Hero — mirrors the iOS app's two-line masthead.
+       Top line: small kicker "WHO DO YOU".
+       Bottom: BLAME.TODAY? with the period as a red visual hook.
+       Same Anton font + tight kerning as the app. */
+    .hero {
+      margin: 0 0 18px;
+    }
+    .kicker {
+      font-family: 'Anton', 'Helvetica Neue', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: -4px;
+    }
+    h1 {
+      font-family: 'Anton', 'Helvetica Neue', sans-serif;
+      font-weight: 900;
+      font-size: 96px;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      margin: 0;
+      color: var(--ink);
+    }
+    h1 .dot {
+      color: var(--red);
+      /* Oversized period — matches the iOS treatment of the .today
+         wordplay. The dot IS the brand hook. */
+      font-size: 1.35em;
+      vertical-align: -0.06em;
+    }
+
+    .tagline {
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 22px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-block;
+      padding: 6px 14px;
+      transform: rotate(-1.5deg);
+      margin: 16px 0 24px;
+    }
+
+    .lede {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      max-width: 540px;
+      margin: 8px 0 28px;
+    }
+    h2 {
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 32px;
+      margin: 36px 0 12px;
+    }
+
+    /* board card */
+    .board-wrap { background: var(--teal); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); padding: 16px; margin: 16px 0; position: relative; }
+    .board-header { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Anton', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; font-size: 14px; margin-bottom: 10px; }
+    .board-rows { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 10px; padding: 6px; }
+    .row { display: grid; grid-template-columns: 50px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; margin: 4px 0; background: var(--paper); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 2px 2px 0 var(--ink); }
+    .row .rank { font-family: 'Anton', sans-serif; font-weight: 900; font-size: 20px; }
+    .row .label { font-family: 'Anton', sans-serif; font-weight: 900; text-transform: uppercase; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .reason { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 700; opacity: 0.55; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+    .row .count { font-family: 'Anton', sans-serif; font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; }
+
+    .pill {
+      display: inline-block;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      font-family: 'Anton', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .arch {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* AI-content disclaimer block — mirrors the iOS "ai-written ·
+       may misstate" copy. Slightly different visual treatment (left
+       red bar) so it doesn't read as just another box. */
+    .disclaimer {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      border-left-width: 8px;
+      border-left-color: var(--red);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      max-width: 600px;
+      margin: 8px 0 20px;
+    }
+
+    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    a:hover { color: var(--red); }
+    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
+
+    /* Smaller hero on narrow screens — the 96px H1 wraps awkwardly
+       under ~360px viewport. Step down so BLAME.TODAY? fits on one
+       line on iPhone SE-class widths. */
+    @media (max-width: 420px) {
+      h1 { font-size: 64px; }
+      .kicker { font-size: 22px; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <div class="kicker">who do you</div>
+      <h1>blame<span class="dot">.</span>today?</h1>
+    </div>
+    <div class="tagline">anonymous · permanent · one blame per day</div>
+
+    <div class="lede">
+      blame.today is a daily anonymous blame board. tap who or what you'd blame today,
+      one vote per device per day, signed to a public nostr ledger anyone can verify in ten seconds.
+      no logins. no feed. no algorithm. no notifications.
+    </div>
+
+    <h2>today's board</h2>
+    <div class="board-wrap">
+      <div class="board-header">
+        <span id="board-day">loading…</span>
+        <span class="pill">live</span>
+      </div>
+      <div class="board-rows" id="board-rows"><div class="small">loading…</div></div>
+    </div>
+
+    <h2>how this works</h2>
+    <div class="lede">
+      <strong>every vote is a signed nostr event.</strong> our app is one view of the public ledger.
+      cloudflare is a cache. anyone can audit.
+    </div>
+    <div class="arch">vote flow:
+  iOS client signs vote with a per-device nostr keypair (BIP-340 Schnorr)
+    ├─→ publishes signed event to 7 public nostr relays   (the ledger)
+    └─→ POSTs to cloudflare worker → D1 rollup            (the cache)
+
+read path:
+  this page  →  cloudflare worker → D1 → CDN-cached JSON  (fast)
+  auditors   →  any nostr relay   → recompute from events (true)
+
+if the two ever disagree, the public ledger wins. the cache is opinion;
+the relays are the record.</div>
+
+    <h2>tap a row → context</h2>
+    <div class="lede">
+      tap any entity on the leaderboard and the app shows a context sheet: a
+      short blame summary, the headlines driving it this week, and a "more on
+      the web" link for going deeper. headlines are aggregated from rss + text-
+      only news sites (cnn lite, npr text, brutalist report, ddg lite) directly
+      on your device — no centralized news middleman.
+    </div>
+
+    <h2>about the ai summaries</h2>
+    <div class="lede">
+      on apple-intelligence-capable devices (iPhone 15 Pro / 16 / 17, ipad m-series,
+      iOS 26+), the blame summary is generated <strong>on your device</strong> from
+      that week's headlines. nothing about your vote leaves your phone. on older
+      devices the summary comes from a bundled snapshot or from peers' published
+      content via nostr.
+    </div>
+    <div class="disclaimer">
+      <strong>ai-written · may misstate · verify with the headlines.</strong><br>
+      every blame summary is written by an LLM (apple intelligence on your device,
+      claude or llama in the bundle, peer-generated on nostr). LLMs can be
+      confidently wrong. each headline carries its source domain and a date stamp —
+      use those to fact-check.
+    </div>
+
+    <h2>cumulative coverage, deduped</h2>
+    <div class="lede">
+      headlines accumulate over a 7-day window per entity so you get a week of
+      context, not just whatever happened in the last hour. near-duplicate
+      titles ("trump signs tariff bill" vs "tariff bill signed by trump") are
+      collapsed at merge time so a single hot-news event doesn't flush out
+      diverse coverage from earlier in the week.
+    </div>
+    <div class="lede">
+      <strong>how we dedup, honestly:</strong> token-set overlap. we
+      tokenize each headline (lowercase, drop stopwords + tokens under 3
+      chars + pure-numeric), then check if |A ∩ B| / min(|A|, |B|) ≥ 0.65.
+      it catches reword-variants that share vocabulary ("tariff bill signed
+      by trump" / "trump signs tariff bill"). it doesn't catch paraphrases
+      with totally different words ("import duties become law" vs "tariff
+      bill signed"). that's a known limitation — semantic dedup would
+      collapse those but also risks collapsing genuinely-different stories
+      that are topically adjacent, so we picked the safer failure mode.
+      source: <a href="https://github.com/blame-today/blame/blob/main/Blame/Services/EntityRefreshCache.swift">EntityRefreshCache.headlinesAreSimilar</a>.
+    </div>
+
+    <h2>how trending works</h2>
+    <div class="lede">
+      <strong>the news is editorial. we're a calculator pointed at headlines.</strong>
+      the cloudflare worker pulls news from ~10 free sources daily (yahoo,
+      npr, the guardian, hacker news, reddit subs, polymarket, kalshi,
+      wikipedia pageviews), extracts blameable entities from each headline
+      via workers ai, weights each mention by source reach × headline
+      negativity, and writes the top targets into the seeded leaderboard.
+      users layer their votes on top.
+    </div>
+    <div class="arch">formula:
+  attention_units = Σ (source_weight × mention_count)
+                    + wikipedia_pageviews_today
+                    + Σ (market_volume) × calibration_factor
+
+  avg_negativity  = mean of per-headline negativity scores [0..3]
+                    (assigned by workers ai llama-3.2)
+
+  seeded_count    = round(0.001 × attention_units × avg_negativity)
+
+source weights (rough monthly-reach proxy):
+  yahoo news        200,000 / mention
+  npr top stories   100,000
+  the guardian       80,000
+  google news        50,000  (aggregator discount — items already deduped)
+  hacker news        30,000
+  reddit r/news      30,000
+  reddit r/worldnews 30,000
+  reddit r/politics  25,000  (partisan, slight discount)
+  reddit r/technology 20,000
+  wikipedia          actual pageviews (sqrt-compressed above 1M)
+  polymarket/kalshi  market volume × 0.05
+
+implementation: worker/src/index.ts NEWS_SOURCES + extractBlameTargets.
+full explainer + a worked example: blame.today/SEEDING.md</div>
+    <div class="lede">
+      <strong>why is trump on top?</strong> because the news talks about him
+      in negative tones a lot. multiple sources, daily, across categories
+      (politics, courts, markets). high mention count × moderate-to-high
+      negativity = high seeded_count. it's mechanical. if the news talks
+      more about putin tomorrow, putin moves up. we don't hand-pick.
+      <a href="https://github.com/blame-today/blame/blob/main/SEEDING.md">SEEDING.md</a>
+      has the worked example.
+    </div>
+
+    <h2>verify the math</h2>
+    <div class="lede">
+      <strong>we don't ask you to trust us.</strong> here's exactly how to recompute today's
+      leaderboard yourself from the public nostr ledger. if your numbers don't match ours,
+      we're lying. call us out.
+    </div>
+    <div class="arch">protocol: <a href="https://github.com/nostr-protocol/nips/blob/master/01.md">nostr NIP-01</a>, kind 30078 (parameterized replaceable)
+
+filter:
+  {"kinds":[30078], "#d":["blame:vote:&lt;YYYY-MM-DD&gt;"]}
+
+relays we publish to:
+  relay.damus.io      nos.lol           relay.nostr.band
+  relay.snort.social  relay.primal.net  offchain.pub
+  nostr.mom
+
+steps:
+  1. connect to any relay above via WebSocket
+  2. send the filter (see /verify?day=&lt;day&gt; for the exact REQ)
+  3. for each EVENT, parse content as JSON → (pubkey, target)
+  4. group by target. unique pubkey count per target = real_count
+  5. compare to /leaderboard?day=&lt;day&gt;
+
+machine-readable: <a id="verify-link" href="#">/verify?day=&lt;today&gt;</a></div>
+
+    <p class="small">
+      <strong>why this matters:</strong> we don't own the data — the protocol does. you don't have to
+      trust the company, the company can't lie undetectably, and if we shut the worker off tomorrow
+      the votes are still there. that's the property we want.
+    </p>
+
+    <h2>running costs</h2>
+    <p>we keep an honest tally of what this costs to run, line by line.
+    <a href="/costs.html">see running costs →</a></p>
+
+    <h2>source</h2>
+    <p><a href="https://github.com/blame-today/blame">github.com/blame-today/blame</a> · public, open-source, MIT licensed where we're the author.</p>
+
+    <h2>install</h2>
+    <p class="small">iOS app coming to the app store. testflight beta opens once we've got telemetry on the first thousand voters.</p>
+
+    <footer>
+      blame.today · anonymous · unverified · final
+    </footer>
+  </main>
+
+  <script>
+    const WORKER_BASE = "https://blame-worker.royashbrook.workers.dev"; // update post-deploy
+    const today = new Date().toISOString().slice(0, 10);
+
+    async function loadBoard() {
+      const rowsEl = document.getElementById('board-rows');
+      const dayEl = document.getElementById('board-day');
+      dayEl.textContent = today;
+      try {
+        const res = await fetch(`${WORKER_BASE}/leaderboard?day=${today}`);
+        if (!res.ok) throw new Error('http ' + res.status);
+        const data = await res.json();
+        if (!data.rows || data.rows.length === 0) {
+          rowsEl.innerHTML = '<div class="small">no votes yet today. be the first.</div>';
+          return;
+        }
+        rowsEl.innerHTML = data.rows.slice(0, 10).map((r, i) => {
+          const total = r.total_count || 0;
+          return `<div class="row">
+            <div class="rank">#${i + 1}</div>
+            <div>
+              <div class="label">${escapeHTML(r.label)}</div>
+              ${r.trending_reason ? `<div class="reason">${escapeHTML(r.trending_reason)}</div>` : ''}
+            </div>
+            <div class="count">${total.toLocaleString()}</div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        rowsEl.innerHTML = `<div class="small">board unavailable. worker may be cold or not yet deployed. (${err.message})</div>`;
+      }
+    }
+
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function wireVerifyLink() {
+      const a = document.getElementById('verify-link');
+      if (a) {
+        a.href = `${WORKER_BASE}/verify?day=${today}`;
+        a.textContent = `/verify?day=${today}`;
+      }
+    }
+
+    loadBoard();
+    wireVerifyLink();
+  </script>
+</body>
+</html>
