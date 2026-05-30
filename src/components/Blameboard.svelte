@@ -46,7 +46,7 @@
      the header (top) and last row (bottom) instead so nothing else pokes out. -->
 <div class="bg-slate-900 rounded-2xl border border-slate-800">
   <div class="p-4 bg-slate-900/50 border-b border-slate-800 rounded-t-2xl flex flex-nowrap justify-between items-center gap-2">
-    <span class="min-w-0 truncate text-xs font-bold text-slate-400 uppercase tracking-wider">Blameboard <span class="text-slate-600 normal-case font-mono">({sub})</span></span>
+    <span class="min-w-0 truncate text-xs font-bold text-slate-400 uppercase tracking-wider">{sub}</span>
     <div class="flex gap-0.5 shrink-0">
       {#each FILTERS as f (f.key)}
         <button
