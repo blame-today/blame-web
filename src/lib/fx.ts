@@ -4,11 +4,32 @@ import type { Action } from 'svelte/action';
 // iOS Safari has no web vibration API so this is a silent no-op there —
 // the fireFloat 🔥 is the cross-platform feedback. Guarded so it never
 // throws on browsers without the API.
+let hapticSwitch: HTMLLabelElement | null = null;
+function hapticSwitchEl(): HTMLLabelElement {
+  if (hapticSwitch) return hapticSwitch;
+  const label = document.createElement('label');
+  label.setAttribute('aria-hidden', 'true');
+  label.style.cssText = 'position:absolute;left:-9999px;width:0;height:0;overflow:hidden;pointer-events:none;';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('switch', '');
+  label.appendChild(input);
+  document.body.appendChild(label);
+  hapticSwitch = label;
+  return hapticSwitch;
+}
 export function haptic(ms = 12): void {
+  // android chrome honors navigator.vibrate; ios safari ignores it, so we also toggle a
+  // hidden <input switch>: ios 17.4+ fires a subtle haptic on switch changes. both best-effort.
   try {
     navigator.vibrate?.(ms);
   } catch {
-    /* no vibration API — visual feedback covers it */
+    /* no vibration API */
+  }
+  try {
+    hapticSwitchEl().click();
+  } catch {
+    /* ios switch-haptic unavailable */
   }
 }
 

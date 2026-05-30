@@ -82,25 +82,28 @@
 <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
   <div class="relative">
     <div class="flex gap-2">
-      <input
-        id="inp"
-        type="text"
-        bind:this={inputEl}
-        bind:value
-        oninput={onInput}
-        onfocus={() => (focused = true)}
-        onblur={() => setTimeout(() => (focused = false), 120)}
-        onkeydown={(e) => e.key === 'Enter' && submit()}
-        maxlength={MAX_LENGTH}
-        {placeholder}
-        class:burn={burning}
-        class:fade={fading}
-        class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-orange-500 text-slate-200"
-      />
+      <div class="relative flex-1">
+        <input
+          id="inp"
+          type="text"
+          bind:this={inputEl}
+          bind:value
+          oninput={onInput}
+          onfocus={() => (focused = true)}
+          onblur={() => setTimeout(() => (focused = false), 120)}
+          onkeydown={(e) => e.key === 'Enter' && submit()}
+          maxlength={MAX_LENGTH}
+          {placeholder}
+          class:burn={burning}
+          class:fade={fading}
+          class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 pr-12 text-sm focus:outline-none focus:border-orange-500 text-slate-200 touch-manipulation"
+        />
+        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono opacity-50 {counterCls}">{value.length}/{MAX_LENGTH}</span>
+      </div>
       <button
         bind:this={blameBtnEl}
         onclick={submit}
-        class="bg-gradient-to-r from-red-600 to-orange-600 text-xs font-black px-4 rounded-xl active:scale-95 transition uppercase"
+        class="bg-gradient-to-r from-red-600 to-orange-600 text-xs font-black px-4 rounded-xl active:scale-95 transition uppercase touch-manipulation"
       >Blame</button>
     </div>
     {#if showSuggest}
@@ -117,8 +120,4 @@
         {/each}
       </div>
     {/if}
-  </div>
-  <div class="flex justify-end items-center px-1">
-    <span class="text-[10px] font-mono shrink-0 {counterCls}">{value.length}/{MAX_LENGTH}</span>
-  </div>
-</div>
+  </div></div>

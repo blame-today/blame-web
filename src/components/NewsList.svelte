@@ -44,7 +44,7 @@
 </script>
 
 <!-- provenance + refresh/countdown, up top -->
-<div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 p-3 px-4 border-b border-slate-800/60">
+<div class="flex flex-nowrap items-center justify-between gap-x-2 p-3 px-4 border-b border-slate-800/60">
   <span class="text-[10px] text-slate-500 min-w-0 truncate">
     You got this from
     <a href={news.source.url || 'https://lite.cnn.com/'} target="_blank" rel="noopener noreferrer" class="text-slate-300 underline decoration-slate-700 hover:text-orange-400">{news.source.name || 'the news'}</a>
@@ -55,7 +55,7 @@
   {:else if canRefreshNow}
     <button onclick={() => loadNews(true)} class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-orange-500 hover:text-orange-400 transition-colors">↻ refresh</button>
   {:else}
-    <span class="shrink-0 text-[10px] font-mono tabular-nums text-slate-600" title="we only re-scrape the news once a day">wait {fmt(remaining)} to refresh</span>
+    <span class="shrink-0 text-[10px] font-mono tabular-nums text-slate-600" title="we only re-scrape the news once a day">wait {fmt(remaining)}</span>
   {/if}
 </div>
 

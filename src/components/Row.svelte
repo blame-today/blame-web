@@ -31,6 +31,6 @@
       <span transition:fade={{ duration: 150 }} class="text-[10px] font-mono font-bold text-amber-400 animate-pulse" title="votes queued — syncing to relays">↑{topic.pending}</span>
     {/if}
     <span use:bump={topic.count} class="text-xs font-mono font-bold bg-slate-950 border border-slate-800 text-orange-500 px-2.5 py-1 rounded-lg tabular-nums inline-block">{topic.count.toLocaleString()}</span>
-    <button onclick={(e) => { vote(topic.id); fireFloat(e.currentTarget); haptic(); }} class="bg-slate-800 hover:bg-red-600 active:scale-95 font-black text-xs px-3 py-1 rounded-lg transition">+1</button>
+    <button onclick={(e) => { vote(topic.id); fireFloat(e.currentTarget); haptic(); }} class="bg-slate-800 hover:bg-red-600 active:scale-95 font-black text-xs px-3 py-1 rounded-lg transition touch-manipulation">+1</button>
   </div>
 </div>

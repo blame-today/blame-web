@@ -45,14 +45,14 @@
 <!-- no overflow-hidden: the "I voted" stickers hang off the left edge. corners are rounded on
      the header (top) and last row (bottom) instead so nothing else pokes out. -->
 <div class="bg-slate-900 rounded-2xl border border-slate-800">
-  <div class="p-4 bg-slate-900/50 border-b border-slate-800 rounded-t-2xl flex flex-wrap justify-between items-center gap-x-2 gap-y-2">
-    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Blameboard <span class="text-slate-600 normal-case font-mono">({sub})</span></span>
-    <div class="flex gap-1 shrink-0">
+  <div class="p-4 bg-slate-900/50 border-b border-slate-800 rounded-t-2xl flex flex-nowrap justify-between items-center gap-2">
+    <span class="min-w-0 truncate text-xs font-bold text-slate-400 uppercase tracking-wider">Blameboard <span class="text-slate-600 normal-case font-mono">({sub})</span></span>
+    <div class="flex gap-0.5 shrink-0">
       {#each FILTERS as f (f.key)}
         <button
           onclick={() => (ui.filter = f.key)}
           class:chip-flash={f.key === 'mine' && ui.blazeId !== ''}
-          class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors {ui.filter === f.key ? 'bg-orange-600 text-white' : 'text-slate-500 hover:text-slate-300'}"
+          class="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors touch-manipulation {ui.filter === f.key ? 'bg-orange-600 text-white' : 'text-slate-500 hover:text-slate-300'}"
         >{f.label}</button>
       {/each}
     </div>
@@ -63,7 +63,7 @@
     <!-- spam-click instruction, top line of the board (moved off the composer
          so it doesn't stack under the input on narrow screens) -->
     <div class="p-3 px-4 border-b border-slate-800/60">
-      <p class="text-[10px] text-slate-500">Click all you want — votes queue and sync to the relays. <span class="text-amber-500/70">↑n</span> = still in flight.</p>
+      <p class="text-[clamp(9px,2.6vw,10px)] whitespace-nowrap text-slate-500">Click freely. Votes queue, then sync. <span class="text-amber-500/70">↑n</span> = in flight.</p>
     </div>
     <div class="divide-y divide-slate-800/60 [&>div:last-child>div]:rounded-b-2xl">
       {#each visible as t (t.id)}
