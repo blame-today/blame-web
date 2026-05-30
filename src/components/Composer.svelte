@@ -118,8 +118,7 @@
       </div>
     {/if}
   </div>
-  <div class="flex justify-between items-center gap-2 px-1">
-    <p class="text-[10px] text-slate-600">Click all you want — votes queue and sync to the relays. <span class="text-amber-500/70">↑n</span> = still in flight.</p>
+  <div class="flex justify-end items-center px-1">
     <span class="text-[10px] font-mono shrink-0 {counterCls}">{value.length}/{MAX_LENGTH}</span>
   </div>
 </div>

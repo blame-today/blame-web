@@ -45,9 +45,9 @@
 <!-- no overflow-hidden: the "I voted" stickers hang off the left edge. corners are rounded on
      the header (top) and last row (bottom) instead so nothing else pokes out. -->
 <div class="bg-slate-900 rounded-2xl border border-slate-800">
-  <div class="p-4 bg-slate-900/50 border-b border-slate-800 rounded-t-2xl flex justify-between items-center">
+  <div class="p-4 bg-slate-900/50 border-b border-slate-800 rounded-t-2xl flex flex-wrap justify-between items-center gap-x-2 gap-y-2">
     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Blameboard <span class="text-slate-600 normal-case font-mono">({sub})</span></span>
-    <div class="flex gap-1">
+    <div class="flex gap-1 shrink-0">
       {#each FILTERS as f (f.key)}
         <button
           onclick={() => (ui.filter = f.key)}
@@ -60,6 +60,11 @@
   {#if ui.filter === 'news'}
     <NewsList />
   {:else}
+    <!-- spam-click instruction, top line of the board (moved off the composer
+         so it doesn't stack under the input on narrow screens) -->
+    <div class="p-3 px-4 border-b border-slate-800/60">
+      <p class="text-[10px] text-slate-500">Click all you want — votes queue and sync to the relays. <span class="text-amber-500/70">↑n</span> = still in flight.</p>
+    </div>
     <div class="divide-y divide-slate-800/60 [&>div:last-child>div]:rounded-b-2xl">
       {#each visible as t (t.id)}
         <div animate:flip={{ duration: 340 }}>

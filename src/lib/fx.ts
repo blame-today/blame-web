@@ -1,5 +1,17 @@
 import type { Action } from 'svelte/action';
 
+// A short haptic tap on vote. Android Chrome honors navigator.vibrate;
+// iOS Safari has no web vibration API so this is a silent no-op there —
+// the fireFloat 🔥 is the cross-platform feedback. Guarded so it never
+// throws on browsers without the API.
+export function haptic(ms = 12): void {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    /* no vibration API — visual feedback covers it */
+  }
+}
+
 // A little 🔥 floating up from an element when a vote spins up.
 export function fireFloat(anchor: HTMLElement | null): void {
   if (!anchor) return;

@@ -2,7 +2,7 @@
   import { fade } from 'svelte/transition';
   import { news, loadNews, nextRefreshAt } from '$lib/news.svelte';
   import { store, vote, blame } from '$lib/store.svelte';
-  import { fireFloat, bump } from '$lib/fx';
+  import { fireFloat, bump, haptic } from '$lib/fx';
   import type { NewsItem } from '$lib/types';
 
   // Lazy: restore the cache or do the one-time fetch the first time the tab is opened.
@@ -36,6 +36,7 @@
   }
   async function castVote(item: NewsItem, e: MouseEvent) {
     fireFloat(e.currentTarget as HTMLElement);
+    haptic();
     const t = topicFor(item.text);
     if (t) vote(t.id);
     else await blame(item.text);
@@ -43,7 +44,7 @@
 </script>
 
 <!-- provenance + refresh/countdown, up top -->
-<div class="flex items-center justify-between gap-2 p-3 px-4 border-b border-slate-800/60">
+<div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 p-3 px-4 border-b border-slate-800/60">
   <span class="text-[10px] text-slate-500 min-w-0 truncate">
     You got this from
     <a href={news.source.url || 'https://lite.cnn.com/'} target="_blank" rel="noopener noreferrer" class="text-slate-300 underline decoration-slate-700 hover:text-orange-400">{news.source.name || 'the news'}</a>
