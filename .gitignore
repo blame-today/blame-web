@@ -1,6 +1,5 @@
-# macOS
-.DS_Store
-
-# Editor
-.vscode/
-.idea/
+node_modules/
+dist/
+.claude/
+test-results/
+playwright-report/

@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reserve the scrollbar gutter so the centered column never lurches sideways when content
+   height crosses the viewport and the vertical scrollbar toggles on/off. */
+html { scrollbar-gutter: stable; }
+
+/* Fiery rejection placeholder — toggled on #inp when content is blocked, then faded out. */
+#inp.burn::placeholder { color: #fb923c; font-weight: 700; transition: color .7s ease; }
+#inp.burn.fade::placeholder { color: rgba(251, 146, 60, 0); }
+
+/* A just-blamed row blazes in; the Mine chip pulses to show where it landed. */
+@keyframes blaze {
+  0% { background-color: rgba(249, 115, 22, 0.45); box-shadow: inset 0 0 26px 4px rgba(249, 115, 22, 0.55); }
+  60% { background-color: rgba(249, 115, 22, 0.12); }
+  100% { background-color: transparent; box-shadow: inset 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+.blaze { animation: blaze 1.1s ease-out; }
+
+@keyframes chip-flash {
+  0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
+  100% { box-shadow: 0 0 0 7px rgba(249, 115, 22, 0); }
+}
+.chip-flash { animation: chip-flash 0.9s ease-out; }
+
+/* The "I voted" stickers warble — two layers at coprime speeds (a rotate + a drift) so the tiny
+   jitter never quite repeats, giving it a slightly-random vibrate. Honors reduced-motion. */
+@keyframes warble-spin {
+  0%   { transform: rotate(0deg); }
+  16%  { transform: rotate(1.7deg); }
+  31%  { transform: rotate(-1.3deg); }
+  48%  { transform: rotate(1.9deg); }
+  62%  { transform: rotate(-1.8deg); }
+  79%  { transform: rotate(0.8deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes warble-drift {
+  0%   { transform: translate(0, 0); }
+  23%  { transform: translate(0.5px, -0.4px); }
+  44%  { transform: translate(-0.6px, 0.3px); }
+  68%  { transform: translate(0.3px, 0.6px); }
+  86%  { transform: translate(-0.4px, -0.5px); }
+  100% { transform: translate(0, 0); }
+}
+.warble-spin { animation: warble-spin 0.43s ease-in-out infinite; }
+.warble-drift { animation: warble-drift 0.61s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .warble-spin, .warble-drift { animation: none; }
+}
