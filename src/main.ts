@@ -2,8 +2,10 @@ import { mount } from 'svelte';
 import './app.css';
 import App from './App.svelte';
 import { init } from '$lib/store.svelte';
+import { publishHit } from '$lib/nostr';
 
 const app = mount(App, { target: document.getElementById('app')! });
 init(); // hydrate cache + connect to relays
+publishHit(); // best-effort page-load ping to nostr for rough traffic counts
 
 export default app;

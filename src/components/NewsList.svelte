@@ -2,7 +2,7 @@
   import { fade } from 'svelte/transition';
   import { news, loadNews, nextRefreshAt } from '$lib/news.svelte';
   import { store, vote, blame } from '$lib/store.svelte';
-  import { fireFloat, bump, haptic } from '$lib/fx';
+  import { fireFloat, bump } from '$lib/fx';
   import type { NewsItem } from '$lib/types';
 
   // Lazy: restore the cache or do the one-time fetch the first time the tab is opened.
@@ -36,7 +36,6 @@
   }
   async function castVote(item: NewsItem, e: MouseEvent) {
     fireFloat(e.currentTarget as HTMLElement);
-    haptic();
     const t = topicFor(item.text);
     if (t) vote(t.id);
     else await blame(item.text);

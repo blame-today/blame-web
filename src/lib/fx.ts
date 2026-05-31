@@ -1,41 +1,5 @@
 import type { Action } from 'svelte/action';
 
-// A short haptic tap on vote. Android Chrome honors navigator.vibrate;
-// iOS Safari has no web vibration API so this is a silent no-op there —
-// the fireFloat 🔥 is the cross-platform feedback. Guarded so it never
-// throws on browsers without the API.
-let hapticSwitch: HTMLInputElement | null = null;
-function hapticSwitchEl(): HTMLInputElement {
-  if (hapticSwitch) return hapticSwitch;
-  const label = document.createElement('label');
-  label.setAttribute('aria-hidden', 'true');
-  // ios fires a subtle haptic when an <input switch> toggles, but seemingly only when the
-  // control is actually laid out. so keep it rendered (just invisible + non-interactive)
-  // rather than collapsed to 0x0 like the first attempt.
-  label.style.cssText = 'position:fixed;bottom:0;right:0;opacity:0;pointer-events:none;z-index:-1;';
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.setAttribute('switch', '');
-  label.appendChild(input);
-  document.body.appendChild(label);
-  hapticSwitch = input;
-  return hapticSwitch;
-}
-export function haptic(ms = 12): void {
-  // android chrome honors navigator.vibrate; ios safari ignores it, so we also toggle a
-  // rendered-but-invisible <input switch>: ios 17.4+ fires a subtle haptic on the toggle.
-  try {
-    navigator.vibrate?.(ms);
-  } catch {
-    /* no vibration API */
-  }
-  try {
-    hapticSwitchEl().click();
-  } catch {
-    /* ios switch-haptic unavailable */
-  }
-}
-
 // A little 🔥 floating up from an element when a vote spins up.
 export function fireFloat(anchor: HTMLElement | null): void {
   if (!anchor) return;

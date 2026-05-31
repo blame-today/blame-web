@@ -19,6 +19,47 @@ const TAG = 'pureblameapp';
 export const signTarget = (text: string): Promise<NostrEvent> => signEvent(1, text, [['t', TAG]]);
 export const signVote = (targetId: string): Promise<NostrEvent> => signEvent(7, '💥', [['e', targetId], ['t', TAG]]);
 
+// A page-load "hit" ping for rough traffic counts. Tagged HIT_TAG (NOT TAG) on purpose so it
+// never matches the topic/live REQs and can't surface on the board; count it any time with a
+// COUNT on { kinds: [1], '#t': [HIT_TAG] }. Throwaway key like everything else.
+export const HIT_TAG = 'pureblameapphit';
+export const signHit = (): Promise<NostrEvent> => signEvent(1, '👀', [['t', HIT_TAG]]);
+
+// Fire-and-forget the page-load hit to the relays on their own short-lived sockets, so it
+// stays decoupled from the app pool's lifecycle. Entirely best-effort: failures are swallowed
+// and each socket self-closes a few seconds after sending.
+export async function publishHit(): Promise<void> {
+  let ev: NostrEvent;
+  try {
+    ev = await signHit();
+  } catch {
+    return;
+  }
+  const msg = JSON.stringify(['EVENT', ev]);
+  for (const url of RELAYS) {
+    try {
+      const ws = new WebSocket(url);
+      ws.onopen = () => {
+        try {
+          ws.send(msg);
+        } catch {}
+        setTimeout(() => {
+          try {
+            ws.close();
+          } catch {}
+        }, 3000);
+      };
+      ws.onerror = () => {
+        try {
+          ws.close();
+        } catch {}
+      };
+    } catch {
+      /* skip this relay, best-effort */
+    }
+  }
+}
+
 type Conn = { ws: WebSocket; loaded: boolean };
 
 // Create the relay pool. `handlers` receives only parsed domain events:
