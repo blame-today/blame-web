@@ -14,6 +14,13 @@ describe('cleanEntity', () => {
   it('leaves mid-phrase possessives intact', () => {
     expect(cleanEntity("Alaska's Mount McKinley")).toBe("Alaska's Mount McKinley");
   });
+
+  it('strips curly single quotes left on quoted-phrase fragments (the ‘Highway / Hel’ bug)', () => {
+    expect(cleanEntity('‘Highway')).toBe('Highway'); // leading curly-left quote (U+2018)
+    expect(cleanEntity('Hel’')).toBe('Hel');         // trailing curly-right quote (U+2019)
+    expect(cleanEntity("'Highway")).toBe('Highway'); // straight leading
+    expect(cleanEntity("Hel'")).toBe('Hel');         // straight trailing
+  });
 });
 
 describe('parseCnnLite', () => {
@@ -122,5 +129,19 @@ describe('extractItems', () => {
   it('wires up the real compromise library', () => {
     const items = extractItems([{ title: 'Kenya and NATO clash over policy in Brussels this week', url: 'a' }], nlp as unknown as Nlp);
     expect(items.map((i) => i.text.toLowerCase())).toContain('kenya');
+  });
+
+  // 'Highway to Hel' bug (#198): a quoted phrase is one named thing, not separate entities.
+  const helHeadline = 'Poland revives its ‘Highway to Hel’ 666 bus route';
+
+  it('does not split a quoted phrase into bare fragments (negative)', () => {
+    const texts = extractItems([{ title: helHeadline, url: 'u' }], nlp as unknown as Nlp).map((i) => i.text);
+    expect(texts).not.toContain('Highway'); // bare fragment of the quoted phrase
+    expect(texts).not.toContain('Hel');     // bare fragment of the quoted phrase
+  });
+
+  it('keeps a quoted phrase as one votable item (positive)', () => {
+    const texts = extractItems([{ title: helHeadline, url: 'u' }], nlp as unknown as Nlp).map((i) => i.text);
+    expect(texts).toContain('Highway to Hel');
   });
 });

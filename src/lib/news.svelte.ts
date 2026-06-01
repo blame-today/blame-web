@@ -92,8 +92,15 @@ const SOURCES: Source[] = [
 // Strip trailing possessives ("Iran's" -> "Iran") and stray edge punctuation so variants merge.
 export function cleanEntity(raw: string): string {
   let t = (raw || '').replace(/\s+/g, ' ').trim();
-  t = t.replace(/(?:[’'`]s|[.,;:!?"“”])+$/giu, ''); // trailing 's / punctuation, repeated
-  t = t.replace(/^[.,;:!?"“”'’`]+/u, '');
+  // Strip stray edge quotes + punctuation at BOTH ends: straight + curly single
+  // quotes ('‘’), backtick, straight + curly doubles ("“”), and .,;:!?. News sources
+  // use curly quotes, so a headline like its 'Highway to Hel' route hands compromise
+  // the tokens ‘Highway / Hel’ — the old classes missed the curly singles, so those
+  // quote scraps survived onto the board.
+  t = t.replace(/^['‘’`"“”.,;:!?]+|['‘’`"“”.,;:!?]+$/gu, '');
+  // Then drop a trailing possessive ('s -> base): "Iran's" -> "Iran". Runs AFTER the
+  // edge strip so "Hel’" loses its quote first and isn't read as a possessive.
+  t = t.replace(/['’`]s$/iu, '');
   return t.trim();
 }
 
@@ -101,6 +108,17 @@ export function cleanEntity(raw: string): string {
 export function extractItems(headlines: Headline[], nlp: Nlp): NewsItem[] {
   const map = new Map<string, NewsItem>();
   for (const h of headlines) {
+    // A quoted phrase is one named thing the headline flagged ("Highway to Hel"), not
+    // separate entities — compromise breaks it at the lowercase "to" into bare fragments.
+    // Lift quoted spans whole first; keep only name-like ones (contain a capitalized word)
+    // so a quoted lowercase aside doesn't become a target. (#198)
+    const quoted: string[] = [];
+    for (const m of h.title.matchAll(/['‘"“]([^'’"”]{2,40})['’"”]/gu)) {
+      const phrase = cleanEntity(m[1]);
+      if (phrase && /\b[A-Z]/u.test(phrase)) quoted.push(phrase);
+    }
+    const quotedWords = new Set(quoted.flatMap((p) => p.toLowerCase().split(/\s+/)));
+
     let ents: string[] = [];
     try {
       const d = nlp(h.title);
@@ -111,16 +129,21 @@ export function extractItems(headlines: Headline[], nlp: Nlp): NewsItem[] {
       continue;
     }
     const inThis = new Set<string>(); // count each entity at most once per headline
-    for (const raw of ents) {
+    const take = (raw: string): void => {
       const text = cleanEntity(raw);
       const key = text.toLowerCase();
-      if (text.length < 3 || text.length > 35) continue;
-      if (inThis.has(key)) continue;
-      if (checkContent(text)) continue; // profanity / PII / gibberish never becomes a suggestion
+      if (text.length < 3 || text.length > 35) return;
+      if (inThis.has(key)) return;
+      if (checkContent(text)) return; // profanity / PII / gibberish never becomes a suggestion
       inThis.add(key);
       const existing = map.get(key);
       if (existing) existing.mentions += 1;
       else map.set(key, { text, mentions: 1, url: h.url, headline: h.title });
+    };
+    for (const p of quoted) take(p); // quoted phrases first, so they win the slot over their fragments
+    for (const raw of ents) {
+      if (quotedWords.has(cleanEntity(raw).toLowerCase())) continue; // bare fragment of a quoted phrase we already took
+      take(raw);
     }
   }
   return [...map.values()].sort((a, b) => b.mentions - a.mentions).slice(0, MAX_ITEMS);
