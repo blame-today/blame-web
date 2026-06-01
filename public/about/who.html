@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>who's blaming — blame.today</title>
+  <meta name="description" content="one device, one vote per day. how we identify 'one device' without knowing who you are." />
+
+  <meta property="og:title" content="who's blaming — blame.today" />
+  <meta property="og:description" content="one device, one vote per day. anonymous-but-attested identity model." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --yellow: #FFE74C;
+      --red:    #FF3B3B;
+      --teal:   #4ECDC4;
+      --ink:    #000;
+      --paper:  #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      opacity: 0.10;
+      pointer-events: none;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+      position: relative;
+    }
+    h1 {
+      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 64px;
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .tagline {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      display: inline-block;
+      padding: 6px 14px;
+      transform: rotate(-1.5deg);
+      margin: 8px 0 20px;
+    }
+    .lede {
+      font-weight: 600;
+      font-size: 17px;
+      max-width: 600px;
+      margin: 8px 0 28px;
+    }
+    h2 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 28px;
+      margin: 40px 0 12px;
+    }
+    h3 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      margin: 24px 0 8px;
+    }
+    p { margin: 8px 0 14px; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    .card {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .card.teal { background: var(--teal); }
+    .card.red { background: var(--red); color: var(--paper); }
+    .card.red a { color: var(--paper); }
+    .card h3 { margin-top: 4px; }
+    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+    a:hover { color: var(--red); }
+    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* sibling-page nav strip at the top */
+    .sibling-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 22px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sibling-strip a {
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      padding: 4px 10px;
+      text-decoration: none;
+    }
+    .sibling-strip a:hover { background: var(--red); color: var(--paper); }
+    .sibling-strip a.current { background: var(--ink); color: var(--paper); }
+
+    /* in-page nav — grouped TOC */
+    .toc {
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 24px 0 28px;
+    }
+    .toc-label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 13px;
+      opacity: 0.7;
+      margin-bottom: 10px;
+    }
+    .toc-groups { display: grid; gap: 14px; }
+    @media (min-width: 700px) {
+      .toc-groups { grid-template-columns: repeat(3, 1fr); }
+    }
+    .toc-group-label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+    .toc-group a {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      padding: 2px 0;
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+    }
+    .toc-group a:hover {
+      border-bottom-color: var(--red);
+      color: var(--red);
+    }
+
+    .back-to-top {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      background: var(--red);
+      color: var(--paper);
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      border-radius: 50%;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 38px;
+      text-align: center;
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.05s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .back-to-top.visible { opacity: 0.95; pointer-events: auto; }
+    .back-to-top:hover { background: var(--ink); color: var(--paper); }
+    .back-to-top:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+    strong { font-weight: 700; }
+    em { font-style: italic; font-weight: 600; }
+    .pullquote {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      background: var(--paper);
+      border-left: 8px solid var(--red);
+      padding: 20px 22px;
+      margin: 22px 0;
+    }
+    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); text-align: center; opacity: 0.7; }
+    footer .footer-tagline { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    footer .footer-id { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; }
+    footer .footer-id .label { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; opacity: 0.7; margin-right: 6px; }
+    footer .key-display { cursor: pointer; border-bottom: 1px dotted currentColor; user-select: all; transition: color 0.15s ease; }
+    footer .key-display:hover { color: var(--red); }
+    footer .key-display.copied { color: var(--red); border-bottom-color: var(--red); }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main id="top">
+    <p class="small"><a href="/">← back</a></p>
+    <h1>who's blaming</h1>
+    <div class="tagline">one device, one vote per day</div>
+
+    <div class="sibling-strip" aria-label="related pages">
+      <a href="/what.html">what →</a>
+      <a href="/why.html">why →</a>
+      <a href="/how.html">how →</a>
+      <a href="/who.html" class="current">who →</a>
+      <a href="/costs.html">costs →</a>
+      <a href="/credits.html">credits →</a>
+      <a href="/privacy.html">privacy →</a>
+      <a href="/terms.html">terms →</a>
+    </div>
+
+    <div class="lede">
+      this page answers the most-asked question about the daily blame
+      board: <em>how do you know it's "one vote per device per day" when
+      there are no logins?</em> the short version: apple's secure enclave
+      + a hashed per-device id. the long version is below.
+    </div>
+    <div class="lede">
+      this isn't a separate system from the rest — the identity model
+      is also written up as a subsection of
+      <a href="/how.html#show-your-work">how → show your work</a>.
+      this page pulls it forward as its own surface because it's the
+      question people ask first.
+    </div>
+
+    <div class="pullquote">one device, one vote per day.<br/>not one person. not one apple id.</div>
+
+    <nav class="toc" aria-label="in this page">
+      <div class="toc-label">in this page →</div>
+      <div class="toc-groups">
+        <div class="toc-group">
+          <div class="toc-group-label">the rule</div>
+          <a href="#rule">what "one device" means</a>
+          <a href="#two-pieces">UUID + App Attest</a>
+        </div>
+        <div class="toc-group">
+          <div class="toc-group-label">scenarios</div>
+          <a href="#scenarios">things people ask</a>
+          <a href="#abuse">abuse vectors i can think of</a>
+        </div>
+        <div class="toc-group">
+          <div class="toc-group-label">the posture</div>
+          <a href="#opinion">my opinion on the trade</a>
+          <a href="#privacy">privacy footnote</a>
+        </div>
+      </div>
+    </nav>
+
+    <h2 id="rule">what "one device" means</h2>
+    <p>
+      the rule is: <strong>one physical iphone can submit one vote per
+      UTC day.</strong> not one apple id. not one app install. not one
+      signed-in account. one physical device, identified by its
+      <strong>secure enclave</strong> — the dedicated crypto chip apple
+      ships in every iphone since the 5s.
+    </p>
+    <p>
+      i could have built this with email signups + per-account dedup.
+      that would have given me "one account per day" — easier to defeat
+      (signups are free), more surveillance (i'd have your email), more
+      moderation surface (account recovery, ban appeals, the works).
+      device-bound attestation gets a stronger constraint without
+      collecting any identifying information.
+    </p>
+
+    <h2 id="two-pieces">UUID + App Attest, stacked</h2>
+    <p>
+      "one device" needs two pieces stacked together, because each piece
+      alone is insufficient:
+    </p>
+    <div class="card">
+      <h3>1 · UUID — a hashed device identifier</h3>
+      <p>
+        a random identifier generated on first launch and stashed in
+        the ios keychain. <strong>raw uuid never leaves your phone.</strong>
+        only <code>sha256(uuid)</code> ever crosses the wire — irreversible,
+        cardinality-preserving. the worker uses this hash to dedupe
+        votes per (device, day) without knowing what device that is.
+      </p>
+      <p>
+        if a UUID alone was the identifier, anyone with a vote-spam
+        script could mint UUIDs all day and pump the leaderboard.
+        UUIDs aren't proof of anything — they're just an arbitrary
+        string.
+      </p>
+    </div>
+    <div class="card">
+      <h3>2 · App Attest — apple's hardware proof</h3>
+      <p>
+        apple's app attest gives us a hardware-bound proof of "this is
+        a real iphone running the real blame.app." the app attest
+        keypair lives in the <strong>secure enclave</strong> — a
+        dedicated crypto chip on the iphone, physically isolated from
+        the main CPU. the private key cannot be exported, even from a
+        jailbroken device.
+      </p>
+      <p>
+        every vote ships with an assertion signed by that enclave key
+        over the request body. our worker validates the assertion
+        against apple's root certificate before accepting the vote.
+        when the validation fails (no assertion, replayed assertion,
+        wrong device class), the vote is rejected at the boundary.
+      </p>
+      <p>
+        the two pieces together give us: <em>"a vote from a uuid we
+        recognize, attested by a real iphone we don't otherwise
+        identify."</em> anonymity from the worker's perspective, but
+        device-bound enough to make per-day dedup meaningful.
+      </p>
+    </div>
+
+    <h2 id="scenarios">scenarios people ask about — as far as i know</h2>
+
+    <div class="card">
+      <h3>"could someone read my keychain and vote as me?"</h3>
+      <p>
+        on a non-jailbroken iphone: no. ios sandboxes keychain access
+        per app. no other app can read blame.today's keychain entry.
+        period.
+      </p>
+      <p>
+        on a jailbroken iphone with a keychain dumper: they can read
+        your uuid. <em>but the uuid alone doesn't authenticate
+        anything</em> — it just identifies. submitting a vote also
+        requires a fresh assertion signed by your secure enclave's
+        app attest key, and that key can't be exported even from a
+        jailbroken device. worker rejects 401 in production without
+        a valid assertion.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>"could someone with my phone vote as me?"</h3>
+      <p>
+        yes — if they have your unlocked iphone in their hands, they
+        can open the app and tap vote. that's the same threat model as
+        your phone being stolen and used for any other app. outside
+        our concern.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>"if i uninstall and reinstall, can i vote again that day?"</h3>
+      <p>
+        on ios 10.3+, deleting an app also wipes its keychain. so yes
+        — a fresh install gives you a fresh uuid + fresh app attest
+        key, and to our worker that looks like a new device. you have
+        to do the full delete-the-app-and-wait dance every time, and
+        lose all your prior local state, just to add one more vote.
+      </p>
+      <p>
+        <strong>icloud keychain</strong> changes this. if you're signed
+        into icloud and icloud keychain is enabled, your uuid syncs
+        across devices + survives reinstall on the same apple id. for
+        most people: reinstalling is NOT a fresh identity.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>"if i factory-reset my phone, can i vote again?"</h3>
+      <p>
+        yes, same answer. a factory reset gives you a fresh keychain
+        + fresh attest key. the cost is wiping all the data on your
+        phone, which is a steep price for a fun app's leaderboard.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>"could a determined attacker scale this with many real iphones?"</h3>
+      <p>
+        yes. nothing we do prevents someone with N iphones from
+        casting N votes per day. the limit is buying iphones and
+        getting through apple's attestation flow once each. that's a
+        steep cost-per-vote, and that's the property we're buying
+        with app attest — <em>not</em> "no one can ever cheat" but
+        "cheating costs real money proportional to scale."
+      </p>
+    </div>
+
+    <h2 id="abuse">abuse vectors i can think of</h2>
+    <p>
+      laid out so people don't have to ask: yes, i thought about
+      these, and i picked the trade-offs deliberately.
+    </p>
+    <ul>
+      <li><strong>reinstall to vote again.</strong> partially mitigated
+      by icloud keychain (your keypair survives reinstall if signed into
+      icloud). without that, yes, reinstall = new identity. is that
+      realistic for a daily blame board? probably not. is it visible?
+      yes — the pattern "this device just appeared, voted for X, never
+      seen before" is on the public ledger.</li>
+      <li><strong>own multiple devices, vote multiple times.</strong>
+      yes. one person with N iphones gets N votes. this is called "one
+      vote per device per day," not "one vote per person per day." i'm
+      not interested in collecting biometrics or government id to
+      enforce the latter.</li>
+      <li><strong>sim farm / phone farm.</strong> someone with hundreds
+      of devices could amplify a target. yields hundreds of pubkeys
+      voting in lockstep — extremely visible on the ledger, costs the
+      attacker real money, fails any smell test on inspection.</li>
+      <li><strong>icloud account switching.</strong> theoretically gives
+      a new keychain entry. practical effort high, payoff low.</li>
+    </ul>
+
+    <h2 id="opinion">my opinion on the trade</h2>
+    <p>
+      <strong>"one vote per device per day" is a good-enough constraint
+      to make the board <em>interesting</em> without imposing the
+      surveillance cost of "one vote per person ever."</strong>
+      attackers who try to game it are visible on the public ledger —
+      auditors can detect unnatural patterns and call them out.
+      <em>i don't try to prevent abuse cryptographically; i surface it
+      socially.</em> that's the trade.
+    </p>
+    <p>
+      there's also a hedge most people miss: the seeded counts from the
+      news zeitgeist (see <a href="/how.html#seeding">how → seeding</a>)
+      act as a baseline of "what's actually being talked about right
+      now." if 1000 sock-puppet votes pile onto some obscure target
+      that's nowhere in today's news, the discrepancy is <em>visible by
+      contrast.</em> the seeding isn't just for the empty-leaderboard
+      problem — it's also a real-time sanity check on the user-vote
+      distribution.
+    </p>
+    <div class="pullquote">we're not inventing crypto.<br/>we're stacking what apple gives us for free<br/>on top of a public nostr ledger.</div>
+    <p>
+      our claim is "one device, one vote per day," not "no one can ever
+      cheat." if someone shows us how to cheat we'll patch it or tell
+      you why we can't. we leave further improvements as an exercise
+      for the reader — this is already overkill for a fun app whose
+      worst-case failure mode is a slightly-skewed leaderboard.
+    </p>
+
+    <h2 id="privacy">privacy footnote</h2>
+    <p>
+      the uuid hash is the only identity-shaped thing that ever reaches
+      the worker, and it's a sha256 — irreversible. the public nostr
+      ledger sees even less: votes are signed with a per-device nostr
+      keypair that has no link to your apple id, your phone number, or
+      anything else about you. <strong>the only way to link a nostr
+      pubkey to you is if you publish that link yourself somewhere
+      else.</strong>
+    </p>
+    <p class="small">
+      for the broader privacy posture see <a href="/privacy.html">privacy
+      policy →</a>. for the system architecture this identity model sits
+      inside, see <a href="/how.html">how this works →</a>.
+    </p>
+
+    <footer>
+      <div class="footer-tagline">anonymous · permanent · one blame per device per day</div>
+      <div class="footer-id"><span class="label">you →</span><span id="visitor-key" class="key-display">…</span></div>
+    </footer>
+  </main>
+
+  <a href="#top" class="back-to-top" id="back-to-top" aria-label="back to top">↑</a>
+  <script>
+    const btn = document.getElementById('back-to-top');
+    if (btn) {
+      window.addEventListener('scroll', () => {
+        btn.classList.toggle('visible', window.scrollY > 600);
+      }, { passive: true });
+    }
+  </script>
+  <script src="/footer.js"></script>
+</body>
+</html>
