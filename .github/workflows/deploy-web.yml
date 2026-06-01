@@ -81,7 +81,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.WEB_DEPLOY_CLIENT_ID }}
+          client-id: ${{ vars.WEB_DEPLOY_CLIENT_ID }}
           private-key: ${{ secrets.WEB_DEPLOY_PRIVATE_KEY }}
           owner: blame-today
           repositories: blame-today.github.io
