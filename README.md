@@ -2,7 +2,7 @@
 
 The **blame.today** web client — the "raw firehose." A pure client-side Svelte + Vite app that talks straight to nostr relays. No backend, no worker, no auth, no rate limit. This is the open, canonical realization of blame; the iOS app + its worker (the regulated version) live in the sibling **mobile** repo, and the canonical spec lives there at `docs/SPEC.md`.
 
-Split out of `blame-today/blame` so each surface is honestly its own thing — they share a brand and the `pureblameapp` nostr tag, but no code, build, or deploy.
+Split out of `blame-today/blame-mobile` (the iOS app + worker repo, formerly `blame-today/blame`) so each surface is honestly its own thing — they share a brand and the `pureblameapp` nostr tag, but no code, build, or deploy.
 
 ## what it is
 
