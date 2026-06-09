@@ -23,6 +23,10 @@ name: Deploy web
 on:
   push:
     branches: [main]
+    # A push touching ONLY scripts/** (e.g. the hits counter) doesn't change the
+    # built site, so skip the rebuild+deploy for script-only pushes.
+    paths-ignore:
+      - 'scripts/**'
   workflow_dispatch:
 
 permissions:
