@@ -24,9 +24,11 @@ beforeEach(() => {
 });
 
 describe('Blameboard', () => {
-  it('is titled Blameboard with All / 24h / Mine / News filters', () => {
+  it('shows the per-filter sub label with All / 24h / Mine / News filters', () => {
+    // the "Blameboard" title was trimmed (b651f79); the header shows the
+    // sub label instead ("top 100" / "yours" / "in the news").
     render(Blameboard);
-    expect(screen.getByText('Blameboard')).toBeInTheDocument();
+    expect(screen.getByText('top 100')).toBeInTheDocument();
     for (const f of ['All', '24h', 'Mine', 'News']) expect(screen.getByText(f)).toBeInTheDocument();
   });
 
