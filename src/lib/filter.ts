@@ -15,7 +15,11 @@ const PROFANITY = new RegExpMatcher({ ...dataset.build(), ...englishRecommendedT
 // Foul language or PII in arbitrary text (e.g. a news headline), independent of length/gibberish —
 // checkContent can't be used there since real headlines always blow the length cap.
 export function isFoul(txt: string): boolean {
-  return EMAIL_RE.test(txt) || (txt.match(/\d/g) || []).length >= 9 || PROFANITY.hasMatch(txt);
+  // Cap the input first: EMAIL_RE is O(n^2) on a long no-"@" run and isFoul runs
+  // on uncapped news text, so a giant headline could freeze the tab. A real
+  // headline is far under 500 chars. (#5)
+  const t = txt.length > 500 ? txt.slice(0, 500) : txt;
+  return EMAIL_RE.test(t) || (t.match(/\d/g) || []).length >= 9 || PROFANITY.hasMatch(t);
 }
 
 // Returns null when clean, else a short fiery reason string.

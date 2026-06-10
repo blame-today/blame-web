@@ -11,6 +11,7 @@ const TOP_N = 100;
 const RESYNC_MS = 45000;
 const RESYNC_TOP = 150;
 const DAY = 86400; // "hot" window: votes in the last 24h
+const MAX_VOTE_ATTEMPTS = 5; // give up on a vote after this many rejections so it can't wedge the queue (#4)
 
 export const TOP = TOP_N;
 
@@ -175,6 +176,7 @@ function resync(): void {
 async function drain(): Promise<void> {
   if (draining) return;
   draining = true;
+  let failures = 0; // consecutive rejections on the current queue head (#4)
   try {
     while (queue.length) {
       if (!pool.anyOpen()) break;
@@ -191,6 +193,7 @@ async function drain(): Promise<void> {
       const t = get(id);
       if (ok === true) {
         queue.shift();
+        failures = 0;
         if (t) {
           t.confirmed += 1;
           t.hot += 1;
@@ -199,6 +202,14 @@ async function drain(): Promise<void> {
         schedulePersist();
         backoff = 0;
         await sleep(120);
+      } else if (++failures >= MAX_VOTE_ATTEMPTS) {
+        // Give up so a never-accepted vote can't block the whole queue (#4):
+        // drop the head, clear its pending badge, reset, and move on.
+        queue.shift();
+        failures = 0;
+        backoff = 0;
+        if (t) t.pending = Math.max(0, t.pending - 1);
+        console.warn('vote dropped after', MAX_VOTE_ATTEMPTS, 'failed attempts:', id);
       } else {
         backoff = backoff ? Math.min(backoff * 2, 8000) : 800;
         await sleep(backoff);

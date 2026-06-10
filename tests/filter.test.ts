@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkContent, clip, MAX_LENGTH } from '$lib/filter';
+import { checkContent, clip, isFoul, MAX_LENGTH } from '$lib/filter';
 
 describe('checkContent', () => {
   it('allows clean topics', () => {
@@ -50,5 +50,21 @@ describe('clip', () => {
     const clipped = clip(long);
     expect(clipped.length).toBe(MAX_LENGTH);
     expect(clipped.endsWith('…')).toBe(true);
+  });
+});
+
+describe('isFoul', () => {
+  it('flags emails, long digit runs, and profanity in news text', () => {
+    expect(isFoul('contact me@example.com')).toBe(true);
+    expect(isFoul('order number 123456789012')).toBe(true);
+    expect(isFoul('this headline is shit')).toBe(true);
+    expect(isFoul('A perfectly normal headline today')).toBe(false);
+  });
+
+  it('is bounded against a giant headline (no ReDoS) (#5)', () => {
+    const evil = 'The big news is ' + 'a'.repeat(60000); // long run, no "@"
+    const t = Date.now();
+    expect(isFoul(evil)).toBe(false);
+    expect(Date.now() - t).toBeLessThan(100); // input is capped => fast
   });
 });
