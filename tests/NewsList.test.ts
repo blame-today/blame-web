@@ -59,16 +59,18 @@ describe('NewsList', () => {
   });
 
   it('credits the source with a CNN Lite link and a fetch timestamp', () => {
+    // copy reads "From <source>" since b651f79 (was "You got this from").
     render(NewsList);
-    expect(screen.getByText(/You got this from/)).toBeInTheDocument();
+    expect(screen.getByText(/From/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'CNN Lite' })).toHaveAttribute('href', 'https://lite.cnn.com/');
     expect(screen.getByText(/^@ /)).toBeInTheDocument();
   });
 
-  it('shows a live "wait … to refresh" countdown while cooling down', () => {
+  it('shows a live "wait …" countdown while cooling down', () => {
+    // countdown copy is "wait HH:MM:SS.mmm" (the " to refresh" suffix was trimmed).
     mock.nextRefreshAt.mockReturnValue(Date.now() + 3_600_000);
     render(NewsList);
-    expect(screen.getByText(/wait \d{2}:\d{2}:\d{2}\.\d{3} to refresh/)).toBeInTheDocument();
+    expect(screen.getByText(/wait \d{2}:\d{2}:\d{2}\.\d{3}/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /refresh/i })).toBeNull();
   });
 

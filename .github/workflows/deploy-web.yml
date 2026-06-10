@@ -56,6 +56,9 @@ jobs:
       - name: Build firehose
         run: |
           npm ci
+          # unit tests gate the deploy — they sat red for a week once because
+          # nothing ran them (CI was build-only)
+          npm test
           npm run build
 
       - name: Assemble dist (.nojekyll + /about link-rewrite)

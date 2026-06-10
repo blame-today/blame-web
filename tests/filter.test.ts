@@ -53,6 +53,25 @@ describe('clip', () => {
   });
 });
 
+describe('profanity evasion hardening', () => {
+  it('catches spaced and dotted profanity', () => {
+    expect(checkContent('f u c k')).toBe('No bad words!');
+    expect(checkContent('s.h.i.t happens')).toBe('No bad words!');
+    expect(isFoul('the s h i t hit the fan today')).toBe(true);
+  });
+
+  it('catches zero-width-split profanity', () => {
+    expect(checkContent('fu\u200Bck')).toBe('No bad words!');
+    expect(isFoul('breaking fu\u200Bck news today now')).toBe(true);
+  });
+
+  it('does not false-positive across word boundaries or on initials', () => {
+    expect(checkContent('mass hit parade')).toBeNull(); // no all-space collapse
+    expect(checkContent('J.R.R. Tolkien')).toBeNull(); // initials collapse to "jrr", clean
+    expect(isFoul('mass hit parade is here today')).toBe(false);
+  });
+});
+
 describe('isFoul', () => {
   it('flags emails, long digit runs, and profanity in news text', () => {
     expect(isFoul('contact me@example.com')).toBe(true);
