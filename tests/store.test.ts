@@ -71,6 +71,22 @@ describe('blame / vote', () => {
     await m.blame('mondays'); // same text, different case
     expect(m.store.topics.filter((t) => t.txt.toLowerCase() === 'mondays')).toHaveLength(1);
   });
+
+  it('drops a vote after repeated rejections instead of wedging the queue (#4)', async () => {
+    vi.useFakeTimers();
+    h.pool.waitOk.mockResolvedValue(null); // every publish times out / is rejected
+    try {
+      h.getHandlers().onTarget({ id: 'tx', text: 'Politics' });
+      const t = find('Politics')!;
+      m.vote('tx');
+      expect(t.pending).toBe(1);
+      await vi.advanceTimersByTimeAsync(60000); // past the 5 attempts + backoffs
+      expect(t.pending).toBe(0); // gave up, badge cleared, queue not wedged
+    } finally {
+      h.pool.waitOk.mockResolvedValue(true); // restore for later tests
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('relay events -> state', () => {
