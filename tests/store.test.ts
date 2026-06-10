@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Shared mock state for the relay layer. vi.hoisted so the vi.mock factory can reference it.
 const h = vi.hoisted(() => {
@@ -49,6 +49,14 @@ beforeEach(async () => {
   localStorage.clear();
   vi.resetModules();
   m = await import('$lib/store.svelte');
+});
+
+// Let the just-finished test's pending persist (200ms debounce) fire BEFORE the
+// next test starts. Without this, a stale timer from the previous module
+// instance can land mid-test on a slow runner and overwrite localStorage with
+// the old store's state (seen as flaky CI: 'Mondays' clobbering 'Comedians').
+afterEach(async () => {
+  await new Promise((r) => setTimeout(r, 250));
 });
 
 const find = (txt: string) => m.store.topics.find((t) => t.txt === txt);
