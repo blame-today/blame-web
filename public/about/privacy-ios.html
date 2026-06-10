@@ -3,370 +3,143 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>privacy — blame.today for iOS</title>
-  <meta name="description" content="the iOS app privacy policy. no accounts, no analytics, no ads. votes are pseudonymous and deletable." />
-
-  <meta property="og:title" content="privacy — blame.today for iOS" />
-  <meta property="og:description" content="the iOS app privacy policy." />
-  <meta property="og:type" content="website" />
-
+  <title>blame.today for iOS — Privacy Policy</title>
+  <meta name="description" content="Privacy policy for the blame.today iOS app. No accounts, no analytics, no ads. Votes are pseudonymous and deletable." />
   <style>
-    :root {
-      --yellow: #FFE74C;
-      --red:    #FF3B3B;
-      --teal:   #4ECDC4;
-      --ink:    #000;
-      --paper:  #fff;
-    }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      background: var(--yellow);
-      color: var(--ink);
-      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      line-height: 1.55;
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.4px);
-      background-size: 6px 6px;
-      opacity: 0.10;
-      pointer-events: none;
-    }
-    main {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 36px 24px 80px;
-      position: relative;
-    }
-    h1 {
-      font-family: 'Oswald', 'Helvetica Neue', sans-serif;
-      font-weight: 700;
-      font-size: 56px;
-      line-height: 0.9;
-      letter-spacing: -0.01em;
-      text-transform: uppercase;
-      margin: 0 0 8px;
-    }
-    .tagline {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 18px;
-      background: var(--paper);
-      border: 3px solid var(--ink);
-      box-shadow: 4px 4px 0 var(--ink);
-      display: inline-block;
-      padding: 6px 14px;
-      transform: rotate(-1.5deg);
-      margin: 8px 0 20px;
-    }
-    .lede {
-      font-weight: 600;
-      font-size: 17px;
-      max-width: 600px;
-      margin: 8px 0 28px;
-    }
-    h2 {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 24px;
-      margin: 36px 0 10px;
-    }
-    h3 {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 16px;
-      margin: 20px 0 8px;
-    }
-    .card {
-      background: var(--paper);
-      border: 3px solid var(--ink);
-      box-shadow: 4px 4px 0 var(--ink);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin: 14px 0;
-    }
-    .card.teal { background: var(--teal); }
-    .card.red { background: var(--red); color: var(--paper); }
-    .card.red a { color: var(--paper); }
-    table.props { width: 100%; border-collapse: collapse; font-size: 14px; }
-    table.props th, table.props td { text-align: left; padding: 8px 12px 8px 0; vertical-align: top; border-bottom: 1.5px solid rgba(0,0,0,0.15); }
-    table.props th { font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; opacity: 0.7; }
-    table.props td:first-child { font-weight: 700; width: 38%; }
-    code {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: 13px;
-      background: rgba(0,0,0,0.06);
-      padding: 1px 5px;
-      border-radius: 4px;
-    }
-    a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-    a:hover { color: var(--red); }
-    .small { font-size: 12px; opacity: 0.65; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-    .sibling-strip {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 8px 0 22px;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .sibling-strip a {
-      background: var(--paper);
-      border: 2px solid var(--ink);
-      box-shadow: 2px 2px 0 var(--ink);
-      padding: 4px 10px;
-      text-decoration: none;
-    }
-    .sibling-strip a:hover { background: var(--red); color: var(--paper); }
-    .sibling-strip a.current { background: var(--ink); color: var(--paper); }
-    strong { font-weight: 700; }
-    em { font-style: italic; font-weight: 600; }
-    .pullquote {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 22px;
-      line-height: 1.25;
-      letter-spacing: -0.01em;
-      background: var(--paper);
-      border-left: 8px solid var(--red);
-      padding: 18px 20px;
-      margin: 22px 0;
-    }
-    footer { margin-top: 60px; padding-top: 20px; border-top: 3px solid var(--ink); text-align: center; opacity: 0.7; }
-    footer .footer-tagline { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #222; max-width: 700px; margin: 0 auto; padding: 40px 20px 80px; }
+    h1 { font-size: 28px; margin-bottom: 4px; }
+    h2 { font-size: 20px; margin-top: 36px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
+    code { background: #f4f4f4; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+    .updated { color: #888; font-size: 14px; }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <main>
-    <p class="small"><a href="/">← back</a></p>
-    <h1>privacy — the iOS app</h1>
-    <div class="tagline">no accounts. no tracking. votes are pseudonymous.</div>
+  <h1>blame.today for iOS — Privacy Policy</h1>
+  <p class="updated">Last updated: June 10, 2026</p>
 
-    <div class="lede">
-      this is the privacy policy for the <strong>blame.today iOS app</strong>.
-      (the blame.today <em>website</em> has a different architecture and its own
-      policy at <a href="/privacy.html">privacy →</a>.) it follows the structure
-      Apple uses for its
-      <a href="https://developer.apple.com/app-store/app-privacy-details/">App Privacy Details</a>
-      framework and the disclosure requirements of
-      <a href="https://gdpr-info.eu/art-13-gdpr/">GDPR Article 13</a>. the content
-      is plain-English honest: nearly every line is a "no, we don't" because the
-      app is built around <em>not collecting things</em>.
-    </div>
+  <p>
+    This is the privacy policy for the <strong>blame.today iOS app</strong>.
+    The short version: no accounts, no sign-up, no analytics, no ads, no
+    trackers. Your votes are pseudonymous, and unlike most of the internet,
+    we can actually delete them if you ask.
+  </p>
 
-    <div class="pullquote">
-      no account, no sign-up.<br/>
-      no analytics, no ads, no trackers.<br/>
-      your votes are pseudonymous — and deletable.
-    </div>
+  <h2>Who's responsible</h2>
+  <p>
+    blame.today is a single-person project. The operator (the "data
+    controller" in GDPR terms) is <strong>Roy Ashbrook</strong>. Reach us at
+    <a href="mailto:hello@blame.today">hello@blame.today</a> for any privacy
+    question, request, or correction.
+  </p>
 
-    <h2 id="tldr">tl;dr</h2>
-    <div class="card teal">
-      <ul>
-        <li><strong>we collect no personal data.</strong> no name, no email, no account, no phone, no location, no contacts, no analytics SDK, no third-party tracker, no ads.</li>
-        <li><strong>votes are pseudonymous.</strong> they're stored in our database keyed by an opaque Apple-generated iCloud identifier — never your name, email, or Apple ID. we cannot map it to a person.</li>
-        <li><strong>votes are deletable.</strong> email us and we'll delete the votes under your identifier. deleting the app clears everything on-device.</li>
-        <li><strong>you can't type anything.</strong> votable topics come from the day's news headlines. no user-authored text is ever shown to other users.</li>
-        <li><strong>the AI summaries run on your device.</strong> nothing you read or vote on is sent to any AI service, ours or anyone's.</li>
-      </ul>
-    </div>
+  <h2>What we collect</h2>
+  <p>
+    Two things, both tied to app functionality and nothing else:
+  </p>
+  <table>
+    <thead><tr><th>Data</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Your votes</strong> (user content)</td>
+        <td>A +1/−1 on a news topic, with the topic name and the date. That's the product. There is no free text anywhere in the app — no posts, no comments, no messages, no photos.</td>
+      </tr>
+      <tr>
+        <td><strong>An opaque iCloud identifier</strong></td>
+        <td>Apple's CloudKit attaches an opaque, Apple-generated user record id to records you create. We never receive your name, email, or Apple ID, and we cannot map the identifier to a person. It exists so the app can show you your own votes.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    What we do <strong>not</strong> collect: name, email, phone, address,
+    location, contacts, health data, financial data, browsing history,
+    search history, purchases, usage analytics, crash diagnostics from our
+    code, or an advertising identifier. There is no analytics SDK and no
+    third-party SDK of any kind in the app.
+  </p>
 
-    <h2 id="controller">who's responsible</h2>
-    <div class="card">
-      <p>
-        blame.today is a single-person project. the operator (the
-        "data controller" in GDPR terms) is <strong>Roy Ashbrook</strong>.
-        reach us at <a href="mailto:hello@blame.today">hello@blame.today</a>
-        for any privacy question, request, or correction.
-      </p>
-    </div>
+  <h2>Where votes live and who can see them</h2>
+  <p>
+    Votes are stored in our CloudKit database (Apple infrastructure,
+    operated by us). Votes are pseudonymous-public: readable by signed-in
+    users of the app and by our tally job, keyed by the opaque identifier,
+    never a name. The aggregate counts (the leaderboard) are readable by
+    everyone. The leaderboard only shows topic names generated server-side
+    from current news — never any user's input.
+  </p>
 
-    <h2 id="apple-categories">what we collect — by apple's app-privacy categories</h2>
-    <div class="card">
-      <p>
-        these are the categories Apple defines for its App Privacy
-        nutrition label. our answer for nearly every one is <em>none</em>.
-        this table matches what we file in App Store Connect.
-      </p>
-      <table class="props">
-        <thead><tr><th>category</th><th>what we collect</th></tr></thead>
-        <tbody>
-          <tr><td>Contact Info<br/><span class="small">name, email, phone, address</span></td><td>none</td></tr>
-          <tr><td>Health &amp; Fitness</td><td>none</td></tr>
-          <tr><td>Financial Info</td><td>none</td></tr>
-          <tr><td>Location</td><td>none (no GPS, no IP retention, no coarse geo)</td></tr>
-          <tr><td>Sensitive Info<br/><span class="small">race, sexuality, religion, etc.</span></td><td>none</td></tr>
-          <tr><td>Contacts</td><td>none</td></tr>
-          <tr><td>User Content</td><td>the <strong>votes you cast</strong> — a +1/−1 on a news topic. that's the product. no photos, no messages, no files, no free text.</td></tr>
-          <tr><td>Browsing History</td><td>none</td></tr>
-          <tr><td>Search History</td><td>none</td></tr>
-          <tr><td>Identifiers<br/><span class="small">user id, device id, advertising id</span></td><td>the opaque iCloud user record id that CloudKit attaches to records you create. it's Apple-generated; we never receive your name, email, or Apple ID and can't link it to you. no advertising id.</td></tr>
-          <tr><td>Purchases</td><td>none (free, no in-app purchases)</td></tr>
-          <tr><td>Usage Data<br/><span class="small">interaction events, advertising data</span></td><td>none. no analytics SDK, no event telemetry, no pixels.</td></tr>
-          <tr><td>Diagnostics<br/><span class="small">crashes, performance</span></td><td>none from our code. (Apple may collect device-level crash data per its own platform policy and your device settings.)</td></tr>
-          <tr><td>Other Data</td><td>none</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <h2>The AI summaries</h2>
+  <p>
+    The "why the blame" summaries in topic detail run entirely on your
+    device using Apple's on-device models (on supported hardware). No text
+    you read or vote on is sent to any AI service — ours, Apple's, or
+    anyone's.
+  </p>
 
-    <h2 id="what-we-publish">what leaves your device when you vote</h2>
-    <div class="card">
-      <table class="props">
-        <thead><tr><th>field</th><th>value</th></tr></thead>
-        <tbody>
-          <tr><td>topic id + label</td><td>the news topic you voted on (e.g. <code>mondays</code> / "Mondays")</td></tr>
-          <tr><td>day + count</td><td>the UTC date and your running +1/−1 count for that topic that day</td></tr>
-          <tr><td>opaque iCloud id</td><td>CloudKit attaches the opaque user record id of your iCloud account to records you create. it's an Apple-generated identifier; we never receive your name, email, or Apple ID.</td></tr>
-        </tbody>
-      </table>
-      <p>
-        votes go to <strong>our CloudKit database</strong> (Apple
-        infrastructure, operated by us). "public database" is Apple's term
-        for the shared container: votes are readable by signed-in users of
-        the app and by our tally job, and the aggregate counts (the
-        leaderboard) are readable by everyone. votes are
-        pseudonymous-public: keyed by the opaque id, never a name.
-      </p>
-    </div>
+  <h2>Third parties the app talks to</h2>
+  <table>
+    <thead><tr><th>Service</th><th>What it sees</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Apple CloudKit / iCloud</td>
+        <td>The vote records described above, stored in our container under <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. Your device authenticates with your iCloud session; Apple does not give us your identity.</td>
+      </tr>
+      <tr>
+        <td>Wikipedia</td>
+        <td>Topic-detail pages fetch the topic's Wikipedia summary — the same request a browser makes for any article, with no identifier attached.</td>
+      </tr>
+      <tr>
+        <td>News sources (CNN Lite, Fox, brutalist.report)</td>
+        <td>The app normally reads a pre-built headline list from our own database. If that's unavailable it falls back to fetching the sources directly — ordinary article-list requests, same as a browser.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    That's the whole list. No ad networks, no analytics services, no data
+    brokers, and we don't share data with anyone.
+  </p>
 
-    <h2 id="content">what reaches the leaderboard</h2>
-    <div class="card">
-      <p>
-        there is no typing in the app. votable topics come from the day's
-        news headlines, extracted on your device. the public leaderboard
-        only shows topics our service has verified against current news
-        plus a denylist — topic names shown to other users are generated
-        server-side from news data, <strong>never from any user's
-        input</strong>. there is no messaging, no profiles, no images.
-      </p>
-    </div>
+  <h2>Retention and deletion</h2>
+  <ul>
+    <li>Votes and leaderboard tallies stay in our database while we operate the service — and are <strong>deletable on request</strong>: email <a href="mailto:hello@blame.today">hello@blame.today</a> and we'll delete the votes under your identifier.</li>
+    <li>On-device caches (headlines, Wikipedia summaries, AI summaries) live on your device until you delete the app.</li>
+  </ul>
 
-    <h2 id="third-parties">third parties</h2>
-    <div class="card">
-      <p>the systems the app talks to, end-to-end:</p>
-      <table class="props">
-        <thead><tr><th>third party</th><th>what they see</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Apple CloudKit / iCloud</td>
-            <td>the vote records above, stored in our container on Apple's infrastructure under <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. your device authenticates with your iCloud session; Apple does not give us your identity.</td>
-          </tr>
-          <tr>
-            <td>Wikipedia REST API</td>
-            <td>topic-detail pages fetch the topic's Wikipedia summary — the same request a browser makes for any article. no identifier attached beyond a normal HTTP request.</td>
-          </tr>
-          <tr>
-            <td>news sources (CNN Lite, Fox, brutalist.report)</td>
-            <td>the app normally reads a pre-built headline manifest from our CloudKit container. if that's unavailable it falls back to fetching the sources directly — ordinary article-list requests, same as a browser.</td>
-          </tr>
-          <tr>
-            <td>Apple Intelligence (Foundation Models)</td>
-            <td>nothing — the "why the blame" summaries run entirely on your device on supported hardware. no text is sent to any server, ours or Apple's.</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>
-        our own Cloudflare worker builds the news manifest and computes
-        the leaderboard tallies <strong>server-side</strong> — the app
-        never talks to it. we don't share data with anyone else. no ad
-        networks, no analytics services, no data brokers.
-      </p>
-    </div>
+  <h2>Your rights</h2>
+  <table>
+    <thead><tr><th>Right</th><th>What it means here</th></tr></thead>
+    <tbody>
+      <tr><td>Access</td><td>Your votes are the only data tied to your identifier, and the app already shows them to you (the MINE tab).</td></tr>
+      <tr><td>Erasure</td><td>Email us and we'll delete the votes under your identifier. Deleting the app clears everything on-device.</td></tr>
+      <tr><td>Portability</td><td>Ask and we'll export the rows under your identifier.</td></tr>
+      <tr><td>Rectification</td><td>Nothing personal exists to correct.</td></tr>
+      <tr><td>Objection / withdrawal</td><td>Stop using the app; no processing continues without you.</td></tr>
+      <tr><td>Complaint</td><td>Your local data-protection authority. In the EU, find yours at <a href="https://edpb.europa.eu/about-edpb/about-edpb/members_en">edpb.europa.eu</a>.</td></tr>
+    </tbody>
+  </table>
 
-    <h2 id="retention">how long things stick around</h2>
-    <div class="card">
-      <table class="props">
-        <thead><tr><th>data</th><th>where</th><th>retention</th></tr></thead>
-        <tbody>
-          <tr><td>votes + leaderboard tallies</td><td>our CloudKit database</td><td>indefinite while we operate the service; deletable on request</td></tr>
-          <tr><td>on-device caches<br/><span class="small">headlines, wiki summaries, AI summaries</span></td><td>your device</td><td>until you delete the app</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <h2>Children</h2>
+  <p>
+    The app isn't designed for children under 13 and we don't knowingly
+    collect data from them. Parents who discover their child is using the
+    app can contact us and we'll delete the votes under that identifier.
+  </p>
 
-    <h2 id="rights">your rights — and what they translate to here</h2>
-    <div class="card">
-      <table class="props">
-        <thead><tr><th>standard right</th><th>what it means for the app</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>access (right to know what data we have)</td>
-            <td>the votes under your opaque iCloud id — which the app already shows you (the MINE tab).</td>
-          </tr>
-          <tr>
-            <td>rectification (correction)</td>
-            <td>nothing personal to correct. board corrections work by voting.</td>
-          </tr>
-          <tr>
-            <td>erasure ("right to be forgotten")</td>
-            <td>email <a href="mailto:hello@blame.today">hello@blame.today</a> and we'll delete the votes under your id. deleting the app clears all on-device data.</td>
-          </tr>
-          <tr>
-            <td>portability</td>
-            <td>your votes are visible in-app; ask and we'll export the rows under your id.</td>
-          </tr>
-          <tr>
-            <td>object / withdraw consent</td>
-            <td>stop using the app. no processing of personal data continues without you.</td>
-          </tr>
-          <tr>
-            <td>complain to a supervisory authority</td>
-            <td>your local data-protection authority. in the EU, find yours at <a href="https://edpb.europa.eu/about-edpb/about-edpb/members_en">edpb.europa.eu</a>.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <h2>Changes to this policy</h2>
+  <p>
+    If we change this policy materially, every revision is visible in
+    public version control at
+    <a href="https://github.com/blame-today/blame-today.github.io/commits/main/about/privacy-ios.html">github.com/blame-today/blame-today.github.io</a>.
+    The date at the top always reflects the current revision.
+  </p>
 
-    <h2 id="kids">children</h2>
-    <div class="card">
-      <p>
-        the app isn't designed for children under 13 and we don't
-        knowingly collect data from them. the App Store age rating
-        reflects this. parents who discover their child is using the app
-        can contact us and we'll delete the votes under that iCloud id.
-      </p>
-    </div>
-
-    <h2 id="changes">changes to this policy</h2>
-    <div class="card">
-      <p>
-        if we change this policy materially, the diff is visible at
-        <a href="https://github.com/blame-today/blame-today.github.io/commits/main/about/privacy-ios.html">github.com/blame-today/blame-today.github.io</a> —
-        every revision is in git, public. the footer shows the
-        last-updated date.
-      </p>
-    </div>
-
-    <h2 id="contact">contact</h2>
-    <div class="card">
-      <p>
-        public questions:
-        <a href="https://github.com/blame-today/blame-today.github.io/issues">github.com/blame-today/blame-today.github.io/issues</a>.
-        for anything private — a GDPR request, a deletion request, a
-        data-protection complaint —
-        <a href="mailto:hello@blame.today">hello@blame.today</a>.
-      </p>
-    </div>
-
-    <footer>
-      <div class="footer-tagline">last updated: 2026-06-10</div>
-    </footer>
-  </main>
+  <h2>Contact</h2>
+  <p>
+    <a href="mailto:hello@blame.today">hello@blame.today</a> — for GDPR
+    requests, deletion requests, or anything else. It's a hobby project; we
+    read everything and respond as fast as a hobby allows.
+  </p>
 </body>
 </html>
