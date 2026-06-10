@@ -33,6 +33,18 @@ describe('checkContent', () => {
     expect(checkContent('strengths')).toBeNull();
   });
 
+  it('blocks keyboard-walk mash (vowels and all)', () => {
+    for (const t of ['qwerty', 'asdf', 'asdfasdf', 'qwertyuiop', 'qweqwe', 'qazwsx', 'wasdwasd', 'uiopuiop', 'zxczxczxc']) {
+      expect(checkContent(t)).toBe('Real words only!');
+    }
+  });
+
+  it('keyboard-walk check has no false positives on real words', () => {
+    for (const t of ['wert', 'property', 'puberty', 'typewriter', 'salad', 'haha', 'tartar', 'couscous', 'pop dad']) {
+      expect(checkContent(t)).toBeNull();
+    }
+  });
+
   it('rejects empty and over-length input', () => {
     expect(checkContent('')).toBe('Say something!');
     expect(checkContent('x'.repeat(MAX_LENGTH + 1))).toBe('Too long!');

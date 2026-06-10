@@ -48,8 +48,28 @@ export function checkContent(txt: string): string | null {
   if (t.length > MAX_LENGTH) return 'Too long!';
   if (EMAIL_RE.test(t) || (t.match(/\d/g) || []).length >= 7) return 'No PII!'; // email / phone / SSN / card / IP
   if (hasProfanity(t)) return 'No bad words!';
-  for (const w of t.toLowerCase().split(/[^a-z0-9]+/)) if (w && looksGibberish(w)) return 'Real words only!';
+  for (const w of t.toLowerCase().split(/[^a-z0-9]+/)) if (w && (looksGibberish(w) || looksKeyboardMash(w))) return 'Real words only!';
   return null;
+}
+
+// Keyboard-walk mash ("qwerty", "asdfasdf", "qazwsx") that the vowel/consonant
+// heuristic below can't see. Bake-offed 2026-06-09 against the npm options:
+// gibberish-detective (markov, sherlock-holmes-trained) catches the same mash
+// but false-positives on 17/49 REAL topics (trump, taxes, GOP, tiktok...), so
+// we stay heuristic. Flags: whole-token contiguous keyboard walks (fwd/rev) of
+// 5+, the classic 4-char clusters, and 2x+ repetitions of a 3-5 char walk
+// chunk ("qweqwe", "wasdwasd"). "wert"/"property"/"salad"/"haha" all pass.
+const KEY_WALKS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm', '1234567890', 'qazwsxedcrfvtgbyhnujmikolp', 'wasd'];
+const MASH4 = new Set(['asdf', 'wasd', 'hjkl', 'zxcv', 'uiop', 'qwer', 'sdfg']);
+const reverse = (s: string) => [...s].reverse().join('');
+function isKeyRun(s: string): boolean {
+  return s.length >= 3 && KEY_WALKS.some((row) => row.includes(s) || row.includes(reverse(s)));
+}
+function looksKeyboardMash(tok: string): boolean {
+  if (tok.length === 4 && (MASH4.has(tok) || MASH4.has(reverse(tok)))) return true;
+  if (tok.length >= 5 && isKeyRun(tok)) return true;
+  const m = tok.match(/^(.{3,5})\1+$/);
+  return !!(m && (isKeyRun(m[1]) || MASH4.has(m[1])));
 }
 
 // Basic keyboard-mash detector: lenient for acronyms (CMBR) and proper nouns.
