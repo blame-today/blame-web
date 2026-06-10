@@ -7,7 +7,7 @@ export function fireFloat(anchor: HTMLElement | null): void {
   const s = document.createElement('span');
   s.textContent = '🔥';
   const dx = Math.random() * 26 - 13;
-  s.style.cssText = `position:fixed;left:${r.left + r.width / 2}px;top:${r.top}px;transform:translate(-50%,-50%);pointer-events:none;z-index:60;font-size:16px;`;
+  s.style.cssText = `position:fixed;left:${r.left + r.width / 2}px;top:${r.top}px;transform:translate(-50%,-50%);pointer-events:none;z-index:60;font-size:1rem;`;
   document.body.appendChild(s);
   s.animate(
     [
@@ -25,7 +25,7 @@ export function burnAway(anchor: HTMLElement | null, text: string): void {
   const r = anchor.getBoundingClientRect();
   const s = document.createElement('span');
   s.textContent = text;
-  s.style.cssText = `position:fixed;left:${r.left + 14}px;top:${r.top + r.height / 2}px;transform:translateY(-50%);pointer-events:none;z-index:60;color:#fb923c;font-weight:700;font-size:14px;text-shadow:0 0 8px #f97316;white-space:nowrap;`;
+  s.style.cssText = `position:fixed;left:${r.left + 14}px;top:${r.top + r.height / 2}px;transform:translateY(-50%);pointer-events:none;z-index:60;color:#fb923c;font-weight:700;font-size:.875rem;text-shadow:0 0 8px #f97316;white-space:nowrap;`;
   document.body.appendChild(s);
   s.animate(
     [

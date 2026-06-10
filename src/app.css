@@ -6,6 +6,16 @@
    height crosses the viewport and the vertical scrollbar toggles on/off. */
 html { scrollbar-gutter: stable; }
 
+/* The app is one centered max-w-md column and everything is sized in rem
+   (tailwind), so scaling the ROOT font-size zooms the whole thing - text,
+   spacing, AND the column width - proportionally. Phones keep the 16px
+   default; tablets/desktops get progressively bigger so the board is not a
+   skinny ribbon in the middle of a big screen (it read brutally thin on
+   iPad + desktop). 28rem column: 448px -> 616px -> 728px -> 840px. */
+@media (min-width: 768px)  { html { font-size: 22px; } }
+@media (min-width: 1024px) { html { font-size: 26px; } }
+@media (min-width: 1536px) { html { font-size: 30px; } }
+
 /* Fiery rejection placeholder — toggled on #inp when content is blocked, then faded out. */
 #inp.burn::placeholder { color: #fb923c; font-weight: 700; transition: color .7s ease; }
 #inp.burn.fade::placeholder { color: rgba(251, 146, 60, 0); }
