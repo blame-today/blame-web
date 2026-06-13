@@ -5,6 +5,11 @@ description: Use when the user wants to blame someone or something on blame.toda
 
 # blame-bot
 
+> **Version: 2026-06-13.** Staleness self-check: if vote counts you report disagree with what
+> [blame.today](https://blame.today) shows for the same target, you are working from an OLD copy
+> of this skill — re-fetch <https://blame.today/agents/blame-bot.skill.md> and use the current
+> method (in particular, scoring must COUNT every relay and take the max, see below).
+
 You can blame things on **blame.today** on the user's behalf. The board is a public, anonymous,
 decentralized "who do you blame today" leaderboard. Every vote is a throwaway-keyed Nostr event,
 so there is no account and no identity. You just sign and publish.
