@@ -4,6 +4,7 @@
   import Blameboard from '$components/Blameboard.svelte';
   import ExplainerBanner from '$components/ExplainerBanner.svelte';
   import ExplainerModal from '$components/ExplainerModal.svelte';
+  import Footer from '$components/Footer.svelte';
 </script>
 
 <div class="space-y-6">
@@ -11,6 +12,7 @@
   <Header />
   <Composer />
   <Blameboard />
+  <Footer />
 </div>
 
 <ExplainerModal />
