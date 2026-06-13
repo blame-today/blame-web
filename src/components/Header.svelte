@@ -1,5 +1,6 @@
 <script lang="ts">
   import Status from '$components/Status.svelte';
+  import { openExplainer } from '$lib/explainer.svelte';
 </script>
 
 <div class="text-center">
@@ -13,6 +14,7 @@
       · <a href="https://github.com/nostr-protocol/nips" target="_blank" rel="noopener noreferrer" title="The NIPs — Nostr's open specs" class="transition-colors hover:text-orange-400 hover:underline">open</a>
       · <a href="https://github.com/nostr-protocol/nips/blob/master/01.md" target="_blank" rel="noopener noreferrer" title="NIP-01: every vote is a Schnorr-signed event" class="transition-colors hover:text-orange-400 hover:underline">tamperproof</a>
       · <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" title="What is Nostr?" class="transition-colors hover:text-orange-400 hover:underline">nostr</a>
+      · <button onclick={openExplainer} title="what is this?" aria-label="what is this?" class="font-bold transition-colors hover:text-orange-400 touch-manipulation">?</button>
     </p>
     <Status />
   </div>
