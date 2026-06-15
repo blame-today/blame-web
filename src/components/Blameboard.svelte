@@ -27,6 +27,9 @@
         .map((t) => ({ ...t, count: t.confirmed })); // no rank — it's your personal list
     }
     return [...store.topics]
+      // hide 0-vote cruft (a target created without its opening vote shows up with no
+      // count); keep your own so a just-blamed target never vanishes on you mid-sync.
+      .filter((t) => t.confirmed > 0 || store.mine.includes(t.id))
       .sort((a, b) => b.confirmed - a.confirmed)
       .slice(0, TOP)
       .map((t, i) => ({ ...t, rank: i + 1, count: t.confirmed, mine: store.mine.includes(t.id) }));

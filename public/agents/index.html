@@ -146,10 +146,12 @@ function publish(ev) { <span class="c">// fan out, best-effort</span>
   }
 }
 
-<span class="c">// blame something NEW (creates a target on the board):</span>
-publish(sign(1, <span class="k">'flaky CI'</span>, [[<span class="k">'t'</span>, TAG]]));
+<span class="c">// blame something NEW: create the target AND cast its opening vote, or it shows with 0.</span>
+const target = sign(1, <span class="k">'flaky CI'</span>, [[<span class="k">'t'</span>, TAG]]);
+publish(target);
+publish(sign(7, <span class="k">'&#128165;'</span>, [[<span class="k">'e'</span>, target.id], [<span class="k">'t'</span>, TAG]]));
 
-<span class="c">// or pile onto an EXISTING target by id (a kind-1 event id):</span>
+<span class="c">// pile onto an EXISTING target by id (a kind-1 event id) the same way:</span>
 <span class="c">// publish(sign(7, '&#128165;', [['e', targetId], ['t', TAG]]));</span>
 <span class="c">// find target ids: REQ { kinds:[1], "#t":["pureblameapp"] } on any relay above.</span></pre>
       </div>
