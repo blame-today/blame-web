@@ -1,0 +1,9 @@
+# Local OpenTofu state can contain sensitive values — never commit it.
+# (Pilot uses local state; rollout moves it to an R2 backend.)
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+crash.*.log
+# generated-config scratch from `tofu plan -generate-config-out`
+generated.tf

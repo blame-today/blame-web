@@ -18,6 +18,8 @@ on:
     # built site, so skip the rebuild+deploy for script-only pushes.
     paths-ignore:
       - 'scripts/**'
+      # infra/ is OpenTofu (the CF clicky-layer) — applied separately, not a site rebuild.
+      - 'infra/**'
   workflow_dispatch:
 
 permissions:
