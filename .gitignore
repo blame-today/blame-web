@@ -3,3 +3,4 @@ dist/
 .claude/
 test-results/
 playwright-report/
+.wrangler/
