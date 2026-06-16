@@ -36,3 +36,17 @@ import {
   id = "ab714a5c20b69d7c836188b2c725184a/fd63d1e5d8433290a18141737decdf3c"
 }
 # (apex + www worker custom-domain AAAA records intentionally NOT imported — wrangler owns them.)
+
+# --- redirect rule + email routing (perms added 2026-06-16) ---
+import {
+  to = cloudflare_ruleset.www_redirect
+  id = "zones/ab714a5c20b69d7c836188b2c725184a/0aa8a80c741d4a8da3411dbaa973e0dd"
+}
+import {
+  to = cloudflare_email_routing_settings.this
+  id = "ab714a5c20b69d7c836188b2c725184a"
+}
+import {
+  to = cloudflare_email_routing_catch_all.this
+  id = "ab714a5c20b69d7c836188b2c725184a"
+}
