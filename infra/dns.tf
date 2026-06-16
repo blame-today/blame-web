@@ -2,10 +2,19 @@
 # Grouped by who set them, because that's the co-management boundary we have to respect:
 # wrangler owns the worker records today, CF Email Routing creates its own, we hand-set anti-spoof.
 
-# NOTE: the apex + www records are the WORKER custom-domain records (proxied AAAA 100::),
-# owned by wrangler (routes in wrangler.jsonc) — deliberately NOT managed here, so each resource
-# has exactly one owner. www still 301s to apex via the redirect rule (which fires before the
-# worker), so wrangler-owns-routing loses nothing. TF owns the records below.
+# The APEX (blame.today) stays a WORKER custom domain owned by wrangler (its proxied AAAA 100::
+# record is wrangler's, not managed here) — it's the worker's front door for the site + /mcp.
+
+# www is NOT a worker custom domain anymore: just a proxied CNAME -> apex, which brings www to
+# CF's edge so the www->apex redirect rule (rules.tf) 301s it before any worker runs. TF owns this.
+resource "cloudflare_dns_record" "www_cname" {
+  zone_id = local.zone_id
+  name    = "www.blame.today"
+  type    = "CNAME"
+  content = "blame.today"
+  proxied = true
+  ttl     = 1
+}
 
 # --- CF Email Routing records (created by the Email Routing feature) ---
 resource "cloudflare_dns_record" "mx_route1" {

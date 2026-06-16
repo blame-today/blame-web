@@ -8,8 +8,9 @@
     "run_worker_first": true
   },
   "routes": [
-    { "pattern": "blame.today", "custom_domain": true },
-    { "pattern": "www.blame.today", "custom_domain": true }
+    { "pattern": "blame.today", "custom_domain": true }
+    // www is NOT a worker custom domain — it's a proxied CNAME (TF-managed) that the
+    // www->apex redirect rule 301s at the edge before the worker. removed 2026-06-16.
   ],
   "observability": {
     "enabled": true
