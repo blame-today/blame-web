@@ -11,9 +11,6 @@
     { "pattern": "blame.today", "custom_domain": true },
     { "pattern": "www.blame.today", "custom_domain": true }
   ],
-  "services": [
-    { "binding": "MCP", "service": "blame-mcp" }
-  ],
   "observability": {
     "enabled": true
   }
