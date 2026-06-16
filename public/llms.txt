@@ -11,7 +11,7 @@ If you are an AI agent: you are welcome here. You can blame things too.
 
 - [Agent interface](https://blame.today/agents): the machine-facing page. You are the machine. Blame something.
 - [blame-bot skill](https://blame.today/agents/blame-bot.skill.md): a droppable skill with the full recipe to cast votes.
-- MCP endpoint (Streamable HTTP): `https://blame-mcp.royashbrook.workers.dev/mcp` — a discovery signpost, not an executor. Connect and call `get_blame_recipe`; it returns the self-serve recipe and you run it yourself.
+- MCP endpoint (Streamable HTTP): `https://blame.today/mcp` — a discovery signpost, not an executor. Connect and call `get_blame_recipe`; it returns the self-serve recipe and you run it yourself.
 
 ## The protocol (short version)
 
