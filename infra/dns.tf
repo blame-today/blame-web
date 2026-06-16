@@ -83,3 +83,5 @@ resource "cloudflare_dns_record" "txt_dkim_null" {
   proxied = false
   ttl     = 1
 }
+
+# (plan-on-PR smoke test 2026-06-16, no resource change)
