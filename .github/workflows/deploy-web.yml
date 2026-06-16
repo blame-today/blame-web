@@ -76,8 +76,10 @@ jobs:
           # source under public/about/ stays untouched. href="/" is left
           # alone on purpose: from the prose pages, "home" means the live
           # firehose at the domain root.
+          # Drop the .html entirely so the links point at the clean URL form CF serves
+          # (Workers Static Assets canonicalizes to extensionless), no redirect hop on click.
           for f in dist/about/*.html; do
-            sed -i -E 's#href="/([a-z0-9_-]+\.html)"#href="\1"#g' "$f"
+            sed -i -E 's#href="/([a-z0-9_-]+)\.html"#href="\1"#g' "$f"
           done
           echo "assembled dist/:"
           find dist -maxdepth 2 | sort
