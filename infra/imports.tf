@@ -35,11 +35,4 @@ import {
   to = cloudflare_dns_record.txt_dkim_null
   id = "ab714a5c20b69d7c836188b2c725184a/fd63d1e5d8433290a18141737decdf3c"
 }
-import {
-  to = cloudflare_dns_record.aaaa_apex
-  id = "ab714a5c20b69d7c836188b2c725184a/b6fd20449674bf54c843b3e5a3fa4963"
-}
-import {
-  to = cloudflare_dns_record.aaaa_www
-  id = "ab714a5c20b69d7c836188b2c725184a/b0b012beddd2391817b13e34369bf4ce"
-}
+# (apex + www worker custom-domain AAAA records intentionally NOT imported — wrangler owns them.)
