@@ -1,24 +1,15 @@
 name: Deploy web
 
-# Build the blame.today web client (this repo — Svelte + Vite, the "raw
-# firehose": a full nostr client, no worker dependency) and publish its
-# static output to the public Pages repo blame-today/blame-today.github.io
-# on push to main. The /about prose (why/how/who/terms) lives in
-# public/about/ and rides along at /about/ via Vite's public-dir copy.
+# Build the blame.today web client (Svelte + Vite) and deploy it to the Cloudflare
+# Worker (Workers + Static Assets) on push to main. The worker (wrangler.jsonc) serves
+# dist/ as static assets, 301-redirects www -> apex, and proxies /mcp to the separate
+# blame-mcp worker. The /about prose ships in public/about/ (Vite copies it into dist/);
+# its root-relative sibling links get rewritten to the clean (no-.html) form so CF serves
+# them without a redirect hop.
 #
-# Pipeline:
-#   1. npm ci + npm run build  -> dist/ (firehose + public/about/ copied
-#      verbatim to dist/about/ by Vite)
-#   2. touch dist/.nojekyll; rewrite the /about prose sibling links
-#   3. rsync dist/ -> blame-today.github.io  (Pages serves it raw, no build)
-#
-# dist/ carries CNAME (blame.today) via public/ + .nojekyll (step 2), so the
-# domain + the hashed assets/ dir survive the rsync --delete.
-#
-# Auth: a GitHub App installed on the target repo with Contents:write —
-# WEB_DEPLOY_CLIENT_ID is a repo variable (public-ish identifier, not a
-# credential), WEB_DEPLOY_PRIVATE_KEY is a repo secret. The default
-# GITHUB_TOKEN is scoped to this repo only and can't push cross-repo.
+# Migrated off GitHub Pages 2026-06-16 (the zone is on Cloudflare now; blame.today is a
+# custom domain on the worker). Auth: CLOUDFLARE_API_TOKEN (Workers:Edit) + the
+# CLOUDFLARE_ACCOUNT_ID, both repo secrets.
 
 on:
   push:
@@ -45,101 +36,30 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          # node 24 (npm 11) matches the npm that wrote package-lock.json.
-          # node 22 ships npm 10, whose nested-dep resolver computes a
-          # different tree and rejects the lock ("Missing: picomatch@4.0.4
-          # from lock file") on `npm ci`. Keep CI on the lock's npm major.
+          # node 24 (npm 11) matches the npm that wrote package-lock.json. node 22 ships
+          # npm 10, whose resolver computes a different tree and rejects the lock on `npm ci`.
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
-      - name: Build firehose
+      - name: Build + test
         run: |
           npm ci
-          # unit tests gate the deploy — they sat red for a week once because
-          # nothing ran them (CI was build-only)
+          # unit tests gate the deploy — they sat red for a week once because nothing ran them.
           npm test
           npm run build
 
-      - name: Assemble dist (.nojekyll + /about link-rewrite)
+      - name: Rewrite /about sibling links to clean URLs
         run: |
           set -euo pipefail
-          # .nojekyll so Pages serves the hashed assets/ dir untouched.
-          # (Vite skips dotfiles in public/, so create it here directly.)
-          touch dist/.nojekyll
-          # The /about prose ships via public/about/ — Vite copies public/
-          # verbatim into dist/, so dist/about/ is already populated by the
-          # build. We only fix up their links here. The pages were authored
-          # for a root-hosted site, so they cross-link siblings as root-
-          # relative ("/why.html"), which 404 under /about/. Rewrite sibling
-          # .html links to relative ("why.html") in the built output; the
-          # source under public/about/ stays untouched. href="/" is left
-          # alone on purpose: from the prose pages, "home" means the live
-          # firehose at the domain root.
-          # Drop the .html entirely so the links point at the clean URL form CF serves
-          # (Workers Static Assets canonicalizes to extensionless), no redirect hop on click.
+          # /about prose is authored root-relative ("/why.html"); rewrite to the clean
+          # extensionless form CF serves so there's no redirect hop. source stays untouched.
           for f in dist/about/*.html; do
             sed -i -E 's#href="/([a-z0-9_-]+)\.html"#href="\1"#g' "$f"
           done
-          echo "assembled dist/:"
-          find dist -maxdepth 2 | sort
-          echo "sample /about link-rewrite (why.html):"
-          grep -oE 'href="[^"]*\.html"' dist/about/why.html | sort -u | head
 
-      - name: Mint deploy token for blame-today.github.io
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.WEB_DEPLOY_CLIENT_ID }}
-          private-key: ${{ secrets.WEB_DEPLOY_PRIVATE_KEY }}
-          owner: blame-today
-          repositories: blame-today.github.io
-
-      - name: Publish dist -> blame-today.github.io
+      - name: Deploy to Cloudflare Worker (Static Assets)
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          SOURCE_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          git clone --depth 50 \
-            "https://x-access-token:${GH_TOKEN}@github.com/blame-today/blame-today.github.io.git" /tmp/site
-          cd /tmp/site
-
-          # Drift guard: if the live repo has commits since our last deploy
-          # that we didn't make (hand edits straight on the public repo),
-          # halt instead of clobbering them. Reconcile into this repo first.
-          # The grep matches both "Deploy from blame-today/blame @" (legacy,
-          # pre-split) and "...blame-web @", so it finds the last deploy
-          # regardless of which repo made it.
-          last_deploy=$(git log --format='%H' --grep='^Deploy from blame-today/blame' -1 || true)
-          if [ -n "$last_deploy" ]; then
-            drift=$(git rev-list --count "${last_deploy}..HEAD")
-            if [ "$drift" -gt 0 ]; then
-              # GitHub's own "Create/Update CNAME" commit (from setting the
-              # custom domain in the Pages UI) is benign — public/CNAME is
-              # canonical and the rsync re-asserts it.
-              offenders=$(git log "${last_deploy}..HEAD" --format='%s' | grep -vE '^(Create|Update) CNAME' || true)
-              if [ -n "$offenders" ]; then
-                echo "::error::Drift detected — out-of-band commit(s) on blame-today.github.io:"
-                git log "${last_deploy}..HEAD" --oneline
-                exit 1
-              fi
-            fi
-          fi
-
-          # dist/ is the source of truth — make the site an exact mirror.
-          # --delete drops anything no longer in dist; --exclude protects
-          # the target's own git dir.
-          rsync -a --delete --exclude='.git' "${GITHUB_WORKSPACE}/dist/" ./
-
-          git config user.name "blame-site-deploy[bot]"
-          git config user.email "blame-site-deploy[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to deploy — site already matches dist/."
-            exit 0
-          fi
-          git commit -m "Deploy from blame-today/blame-web @ ${SOURCE_SHA::7}"
-          git push origin HEAD
-          echo "Deployed dist/ @ ${SOURCE_SHA::7} -> blame-today.github.io"
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler@4 deploy
