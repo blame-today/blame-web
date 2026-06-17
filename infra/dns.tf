@@ -83,3 +83,16 @@ resource "cloudflare_dns_record" "txt_dkim_null" {
   proxied = false
   ttl     = 1
 }
+
+# --- MCP registry domain-ownership proof ---
+# Lets us publish the MCP server under the `today.blame` namespace (reverse-DNS of blame.today).
+# Public key only; the matching private key is a GH secret (MCP_DNS_PRIVATE_KEY in blame-mcp) that
+# the publish workflow signs with. Coexists with the SPF TXT on the apex (multiple TXT allowed).
+resource "cloudflare_dns_record" "txt_mcp_registry" {
+  zone_id = local.zone_id
+  name    = "blame.today"
+  type    = "TXT"
+  content = "\"v=MCPv1; k=ed25519; p=QupLaERNYst7l1w0EOE1Z7OxQIQva0vvUj5VsZRUDJU=\""
+  proxied = false
+  ttl     = 1
+}
