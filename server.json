@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "today.blame/mcp",
+  "title": "Blame Today",
+  "description": "Blame things on blame.today, the anonymous 'who do you blame today' board. Nostr, no account.",
+  "version": "3.0.0",
+  "repository": {
+    "url": "https://github.com/blame-today/blame-web",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://blame.today/mcp"
+    }
+  ]
+}
