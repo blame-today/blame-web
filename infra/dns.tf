@@ -93,7 +93,7 @@ resource "cloudflare_dns_record" "txt_mcp_registry" {
   zone_id = local.zone_id
   name    = "blame.today"
   type    = "TXT"
-  content = "\"v=MCPv1; k=ed25519; p=VHIhbZ9STHZHrmIj4+V1D4+/86hkWSDXESHInrqjO8M=\""
+  content = "\"v=MCPv1; k=ed25519; p=7cj58WJMNfHjIz+XVsQn0EQth5ACiLN2erxItb92ZiI=\""
   proxied = false
   ttl     = 1
 }
