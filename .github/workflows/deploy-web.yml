@@ -20,6 +20,8 @@ on:
       - 'scripts/**'
       # infra/ is OpenTofu (the CF clicky-layer) — applied separately, not a site rebuild.
       - 'infra/**'
+      # .hush is dev-tooling config (the secret->envvar manifest), not site code.
+      - '.hush'
   workflow_dispatch:
 
 permissions:
