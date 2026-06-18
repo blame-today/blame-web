@@ -31,8 +31,9 @@ Two credentials, both injected at run time, never on disk:
   Dynamic URL Redirects:Edit, Email Routing Rules) — for the cloudflare provider.
 - the **R2 S3 access key + secret** — for the state backend.
 
-All three live in [hush](https://github.com/royashbrook/hush) under namespace `blame`
-(`cf-iac-token`, `r2-access-key-id`, `r2-secret-access-key`). The `.hush` manifest at the repo root
+All three live in [hush](https://github.com/royashbrook/hush) in the default `hush` namespace,
+`blame-` prefixed (`blame-cf-iac-token`, `blame-r2-access-key-id`, `blame-r2-secret-access-key`) so a
+human finds every hush secret by searching `hush` in Keychain. The `.hush` manifest at the repo root
 maps them to the env vars tofu reads, so one command injects everything:
 
 ```sh
