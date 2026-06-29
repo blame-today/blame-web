@@ -4,6 +4,8 @@ The **blame.today** web client — the "raw firehose." A client-side Svelte + Vi
 
 Split out of `blame-today/blame-mobile` (the old iOS app + worker repo) so each surface is honestly its own thing — they share a brand and the `pureblameapp` nostr tag, but no code, build, or deploy.
 
+[check it out - blame.today](https://blame.today)
+
 ## what it is
 
 - a blame target is a nostr `kind 1` event tagged `pureblameapp`; a vote is a `kind 7` reaction tagged `e:<targetId>` + `pureblameapp`. throwaway key per event.
