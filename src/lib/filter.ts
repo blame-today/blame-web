@@ -25,10 +25,22 @@ const INVISIBLES_RE = /[\u200B-\u200D\u2060\uFEFF\u00AD]/g;
 // it grabs exactly "s h i t" (not the glued "e s h i t h" -> "eshith").
 const SPACED_RUN_RE = /\b(?:[a-z0-9][ .\-_*]){2,}[a-z0-9]\b/gi;
 
+// Explicit blocklist for vulgar things the obscenity dataset can't catch: multi-word crudeness where
+// no single word is profane (bestiality etc.), anatomical terms it omits, and deliberate respellings
+// that dodge the matcher. Each pattern allows inline separators [\s.\-_*] so "s ex" / "s.ex" can't
+// sneak past. Kept deliberately narrow to avoid false positives (a topic is < 35 chars). Append here.
+const BLOCK: RegExp[] = [
+  /fing\w*[\s.\-_*]*(?:the|a|my|your|our|that)?[\s.\-_*]*dog/i, // "fingering the dog" + variants
+  /p[e3]n[i1l]s|pensis/i, // penis / p3nis / pen1s / pensis (the i/s transpose)
+  /\bs[\s.\-_*]+e[\s.\-_*]*x\b/i, // deliberately broken "sex": "s ex", "s.ex", "s-e-x" (plain "sex" stays legit)
+  /rectum/i, // "prolapsed rectum" and friends
+];
+const hasBlocked = (txt: string): boolean => BLOCK.some((re) => re.test(txt));
+
 function hasProfanity(txt: string): boolean {
-  if (PROFANITY.hasMatch(txt)) return true;
+  if (PROFANITY.hasMatch(txt) || hasBlocked(txt)) return true;
   const collapsed = txt.replace(SPACED_RUN_RE, (m) => m.replace(/[ .\-_*]/g, ''));
-  return collapsed !== txt && PROFANITY.hasMatch(collapsed);
+  return collapsed !== txt && (PROFANITY.hasMatch(collapsed) || hasBlocked(collapsed));
 }
 
 // Foul language or PII in arbitrary text (e.g. a news headline), independent of length/gibberish —

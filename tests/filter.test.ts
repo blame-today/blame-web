@@ -20,6 +20,18 @@ describe('checkContent', () => {
     }
   });
 
+  it('blocks the vulgar blocklist — phrases + respell dodges', () => {
+    for (const t of ['accidentally fingering the dog', 'finger the dog', 'fingering dog', 'pensis', 'p3nis', 'pen1s', 's ex', 'S.ex', 's-e-x', 'my prolapsed rectum']) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
+
+  it('blocklist does not false-positive on legit topics', () => {
+    for (const t of ['my hot dog stand', 'finding the dog', 'a nice pen', 'Sussex', 'sexism is bad', 'opens the door']) {
+      expect(checkContent(t)).toBeNull();
+    }
+  });
+
   it('blocks PII — emails and long digit runs', () => {
     expect(checkContent('me@example.com')).toBe('No PII!');
     expect(checkContent('call 5551234567')).toBe('No PII!');
