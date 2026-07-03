@@ -106,22 +106,21 @@ async function judge(labels) {
     return labels.filter((l) => mock.has(l));
   }
   const numbered = labels.map((l, i) => `${i}. ${l}`).join('\n');
-  const prompt = `You moderate a public "blame board" where people post a short thing to blame (a gripe). The bar for removal is HIGH: this is an edgy, anonymous board, so almost everything stays. Your job is to catch only entries that are unambiguously sexually explicit or obscene, the kind that would get an app pulled from the App Store.
+  const prompt = `You moderate a public "blame board" where people post a short thing to blame (a gripe). It's an edgy, anonymous board, so most things stay, but we keep it free of sexual content. Lean toward removing anything with a clear sexual read.
 
-FLAG an entry only if it explicitly names or describes a sex act, genitalia, bestiality, or hardcore pornographic content. It must be explicit and unambiguous on its own.
+FLAG an entry if it is sexually explicit OR a sexual reference / innuendo / crude slang for sex, genitalia, or sex acts (e.g. "Boom Boom", "Donkey Boy", a sex-pun on a name). If a normal person would read it as "that's a sex thing", flag it.
 
-Do NOT flag (these all STAY):
+Do NOT flag (these STAY):
+- plain names or affectionate terms with no sexual read ("Mommy", "Daddy", "your mom", "Grandma")
 - gross-out or scatological gripes ("vomiting", "poop", "farts")
-- innuendo, double meanings, puns, or slang that MIGHT be sexual ("Boom Boom", "Shrex", "Donkey Boy")
-- childish or affectionate names ("Mommy", "Daddy", "your mom")
 - mere profanity or insults ("damn", "idiots", "assholes")
 - anything political, edgy, or offensive-but-not-sexual
-When in doubt, do NOT flag it. Only flag if you are certain it is explicit sexual/obscene content. Flagging a harmless entry hides a real person's post, which is worse than missing one.
+Being a bit overzealous on the sexual stuff is fine; the one line you must not cross is flagging a plainly innocent name or a non-sexual gripe.
 
 Here are the entries:
 ${numbered}
 
-Return only the entries that clearly meet the FLAG bar, verbatim, exactly as written above (copy the text after the number). If none qualify, return an empty list.`;
+Return only the entries that meet the FLAG bar, verbatim, exactly as written above (copy the text after the number). If none qualify, return an empty list.`;
 
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
