@@ -37,6 +37,8 @@ const BLOCK: RegExp[] = [
   // audit:begin — literals auto-added by scripts/vulgarity-audit.mjs (gemini-flagged, guard-checked). do not hand-edit.
   /Donkey Boy/i, // audited 2026-07-03
   /Boom Boom/i, // audited 2026-07-03
+  /Shrex/i, // audited 2026-07-03
+  /Gas pains/i, // audited 2026-07-03
   // audit:end
 ];
 const hasBlocked = (txt: string): boolean => BLOCK.some((re) => re.test(txt));
