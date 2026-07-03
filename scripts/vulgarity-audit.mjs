@@ -123,19 +123,31 @@ ${numbered}
 
 Return only the entries that clearly meet the FLAG bar, verbatim, exactly as written above (copy the text after the number). If none qualify, return an empty list.`;
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': KEY },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: 'application/json',
-        responseSchema: { type: 'object', properties: { vulgar: { type: 'array', items: { type: 'string' } } }, required: ['vulgar'] },
-      },
-    }),
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: 'application/json',
+      responseSchema: { type: 'object', properties: { vulgar: { type: 'array', items: { type: 'string' } } }, required: ['vulgar'] },
+    },
   });
-  if (!res.ok) die(`gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  // Retry transient gemini errors (429 rate limit, 500/503 overload) with backoff — this runs
+  // unattended, so a Google hiccup shouldn't fail the sweep. 400/401/403 are real, so die at once.
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let res;
+  for (let attempt = 1; ; attempt++) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': KEY },
+      body,
+    });
+    if (res.ok) break;
+    const transient = res.status === 429 || res.status === 500 || res.status === 503;
+    if (!transient || attempt >= 5) die(`gemini ${res.status} after ${attempt} attempt(s): ${(await res.text()).slice(0, 300)}`);
+    const wait = 2000 * 2 ** (attempt - 1); // 2s, 4s, 8s, 16s
+    console.error(`vulgarity-audit: gemini ${res.status} (transient), retry ${attempt}/4 in ${wait / 1000}s...`);
+    await sleep(wait);
+  }
   const data = await res.json();
   let parsed;
   try { parsed = JSON.parse(data.candidates[0].content.parts[0].text); } catch { die('gemini returned unparseable JSON'); }
