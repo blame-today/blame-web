@@ -27,7 +27,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FILTER_TS = join(ROOT, 'src/lib/filter.ts');
 const AUDIT_TEST = join(ROOT, 'tests/audit.test.ts');
 const TOP_N = Number(process.env.TOP_N || 200);
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const KEY = process.env.GEMINI_API_KEY;
 
 const RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.snort.social', 'wss://nostr.mom', 'wss://relay.nostr.net'];
@@ -106,14 +106,22 @@ async function judge(labels) {
     return labels.filter((l) => mock.has(l));
   }
   const numbered = labels.map((l, i) => `${i}. ${l}`).join('\n');
-  const prompt = `You moderate a public "blame board" where people post a short thing to blame (a gripe). Almost everything is harmless: "Mondays", "taxes", "traffic", "daylight saving time", "my boss". Politics, edgy opinions, and mild profanity like "damn" are all FINE and must NOT be flagged.
+  const prompt = `You moderate a public "blame board" where people post a short thing to blame (a gripe). The bar for removal is HIGH: this is an edgy, anonymous board, so almost everything stays. Your job is to catch only entries that are unambiguously sexually explicit or obscene, the kind that would get an app pulled from the App Store.
 
-Flag ONLY entries that are sexually explicit, describe sex acts, genitalia, or bestiality, or are otherwise obscene/pornographic. When unsure, do NOT flag it.
+FLAG an entry only if it explicitly names or describes a sex act, genitalia, bestiality, or hardcore pornographic content. It must be explicit and unambiguous on its own.
+
+Do NOT flag (these all STAY):
+- gross-out or scatological gripes ("vomiting", "poop", "farts")
+- innuendo, double meanings, puns, or slang that MIGHT be sexual ("Boom Boom", "Shrex", "Donkey Boy")
+- childish or affectionate names ("Mommy", "Daddy", "your mom")
+- mere profanity or insults ("damn", "idiots", "assholes")
+- anything political, edgy, or offensive-but-not-sexual
+When in doubt, do NOT flag it. Only flag if you are certain it is explicit sexual/obscene content. Flagging a harmless entry hides a real person's post, which is worse than missing one.
 
 Here are the entries:
 ${numbered}
 
-Return the entries to block, verbatim, exactly as written above (copy the text after the number).`;
+Return only the entries that clearly meet the FLAG bar, verbatim, exactly as written above (copy the text after the number). If none qualify, return an empty list.`;
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: 'POST',
