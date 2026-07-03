@@ -35,6 +35,8 @@ const BLOCK: RegExp[] = [
   /\bs[\s.\-_*]+e[\s.\-_*]*x\b/i, // deliberately broken "sex": "s ex", "s.ex", "s-e-x" (plain "sex" stays legit)
   /rectum/i, // "prolapsed rectum" and friends
   // audit:begin — literals auto-added by scripts/vulgarity-audit.mjs (gemini-flagged, guard-checked). do not hand-edit.
+  /Donkey Boy/i, // audited 2026-07-03
+  /Boom Boom/i, // audited 2026-07-03
   // audit:end
 ];
 const hasBlocked = (txt: string): boolean => BLOCK.some((re) => re.test(txt));
