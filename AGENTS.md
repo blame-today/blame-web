@@ -54,15 +54,31 @@ nothing ran them).
   no tally job, no authorized signer (see [`src/lib/store.svelte.ts`](src/lib/store.svelte.ts)).
 - The **News** tab mines headlines **client-side** in the browser (`src/lib/news.svelte.ts`); the
   content **filter** (PII / profanity / gibberish) is in [`src/lib/filter.ts`](src/lib/filter.ts).
+  It's word-level, so it re-drops filtered targets on arrival — see the audit below for the gap.
 - The **Worker** ([`worker/index.js`](worker/index.js)) serves the static site + the inline,
   stateless `/mcp` handler ([`worker/mcp.js`](worker/mcp.js)). `server.json` + `publish-mcp.yml`
   re-publish the registry listing when `server.json` changes.
 
+### Content filter audit (issue #22)
+The filter is word-level (the `obscenity` lib), so phrase-level vulgarity where no single word is
+profane can land on the board (a real one: "fingering the dog"). [`.github/workflows/vulgarity-audit.yml`](.github/workflows/vulgarity-audit.yml)
+runs [`scripts/vulgarity-audit.mjs`](scripts/vulgarity-audit.mjs) daily (and on `workflow_dispatch`):
+pull the top ~200 targets by votes, ask **gemini** which of the currently *displayed* ones are
+vulgar, and append literal blocklist entries between the `audit:begin`/`audit:end` markers in
+`filter.ts`. The model judges WHAT; the script decides HOW (dumb literals, never LLM-authored
+regexes). A **collateral guard** runs the patched filter over the whole top-N and refuses to write
+if it would block any un-flagged entry; `npm test` must pass too. Only then does it open + squash-
+merge a PR (the reviewable record + revert point), and the merge deploys. Run it locally with
+`hush exec -- node scripts/vulgarity-audit.mjs`. `tests/audit.test.ts` is auto-maintained (each run
+appends that day's flagged entries as a standing regression) — don't hand-edit it.
+
 ### Secrets
 Managed with [hush](https://github.com/royashbrook/hush): stored once in the keychain, injected
-straight into `tofu` / `gh`, never printed or committed. This project's hush items use a `blame-`
-prefix (default namespace, so they group in one keychain search). The committed [`.hush`](.hush)
-manifest maps them to the env vars `tofu` reads. CI reads the same values from GH secrets.
+straight into `tofu` / `gh` / `node`, never printed or committed. This project's hush items use a
+`blame-` prefix (default namespace, so they group in one keychain search): `blame-cf-iac-token`,
+`blame-r2-*`, `blame-mcp-signing-key`, and `blame-llm-api-key` (the gemini key the audit uses). The
+committed [`.hush`](.hush) manifest maps them to env vars. CI reads the same values from GH secrets
+(the audit reads `GEMINI_API_KEY`).
 
 ### Infra
 Cloudflare free tier. **OpenTofu** owns DNS / zone settings / redirect rule / email routing
