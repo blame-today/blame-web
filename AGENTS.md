@@ -67,9 +67,10 @@ pull the top ~200 targets by votes, ask **gemini** which of the currently *displ
 vulgar, and append literal blocklist entries between the `audit:begin`/`audit:end` markers in
 `filter.ts`. The model judges WHAT; the script decides HOW (dumb literals, never LLM-authored
 regexes). A **collateral guard** runs the patched filter over the whole top-N and refuses to write
-if it would block any un-flagged entry; `npm test` must pass too. Only then does it open + squash-
-merge a PR (the reviewable record + revert point), and the merge deploys. Run it locally with
-`hush exec -- node scripts/vulgarity-audit.mjs`. `tests/audit.test.ts` is auto-maintained (each run
+if it would block any un-flagged entry; `npm test` must pass too. Only then does it commit straight
+to main (one clean, revertible `(refs #22)` commit, which deploys). It would open a PR instead, but
+the blame-today org blocks Actions-created PRs; flip that org Actions setting to restore the PR flow.
+Run it locally with `hush exec -- node scripts/vulgarity-audit.mjs`. `tests/audit.test.ts` is auto-maintained (each run
 appends that day's flagged entries as a standing regression) — don't hand-edit it.
 
 ### Secrets

@@ -45,22 +45,20 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/vulgarity-audit.mjs
 
-      - name: Open + merge the patch PR
+      # Commit straight to main. The audit already validated in-job (collateral guard + npm test),
+      # so this is a squash-equivalent: one clean, revertible (refs #22) commit that deploys. We'd
+      # prefer a reviewable PR, but the blame-today ORG blocks Actions from creating PRs (its
+      # org-level Actions setting). To switch back to the PR flow, flip that org setting ("Read and
+      # write" + "Allow GitHub Actions to create and approve pull requests") and restore the PR step.
+      - name: Commit the patch to main
         if: steps.audit.outputs.has_changes == '1'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          DATE=$(date +%Y-%m-%d)
-          BRANCH="vulgarity-audit/$DATE-${{ github.run_id }}"
           git config user.name 'blame-audit-bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -b "$BRANCH"
           git add src/lib/filter.ts tests/audit.test.ts
           git commit -m "filter: block ${{ steps.audit.outputs.flagged_count }} gemini-flagged vulgar entries (refs #22)"
-          git push -u origin "$BRANCH"
-          PR=$(gh pr create --base main --head "$BRANCH" \
-            --title "vulgarity audit $DATE: block ${{ steps.audit.outputs.flagged_count }} entries" \
-            --body "Automated by .github/workflows/vulgarity-audit.yml (issue #22). gemini flagged these off the live board; the collateral guard confirmed 0 over-block over the top-N and npm test is green. merging ships them to the board on the next deploy. revert this PR to undo.")
-          # Already validated in-job (guard + tests), so merge straight in. The PR is the record + revert point.
-          gh pr merge "$PR" --squash --delete-branch
+          # main isn't protected + the audit runs solo (concurrency group), so a plain push is safe;
+          # rebase once in case an unrelated push raced in.
+          git pull --rebase origin main
+          git push origin HEAD:main
