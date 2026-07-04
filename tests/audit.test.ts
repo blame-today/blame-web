@@ -14,4 +14,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-07-04: blocks the flagged vulgar entries', () => {
+    for (const t of ["vomiting at you deliberately","Epstein","Mushy miralax mound","the divorce lawyer"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
