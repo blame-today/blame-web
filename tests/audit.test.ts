@@ -19,4 +19,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-07-07: blocks the flagged vulgar entries', () => {
+    for (const t of ["aliens making you gay"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
