@@ -42,7 +42,7 @@ jobs:
       - name: Run the audit (fetch, judge, patch, guard, test)
         id: audit
         env:
-          MTOK_IDENTITY_JSON: ${{ secrets.MTOK_IDENTITY_JSON }}
+          MTOK_EVM_PRIVATE_KEY: ${{ secrets.MTOK_EVM_PRIVATE_KEY }}
         run: node scripts/vulgarity-audit.mjs
 
       # Commit straight to main. The audit already validated in-job (collateral guard + npm test),

@@ -78,9 +78,9 @@ appends that day's flagged entries as a standing regression) — don't hand-edit
 Managed with [hush](https://github.com/royashbrook/hush): stored once in the keychain, injected
 straight into `tofu` / `gh` / `node`, never printed or committed. This project's own hush items use
 a `blame-` prefix (default namespace, so they group in one keychain search): `blame-cf-iac-token`,
-`blame-r2-*`, and `blame-mcp-signing-key`. The audit also uses the shared mtok house seller identity.
+`blame-r2-*`, and `blame-mcp-signing-key`. The audit also uses the shared mtok house seller key.
 The committed [`.hush`](.hush) manifest maps them to env vars. CI reads the same values from GH
-secrets (`MTOK_IDENTITY_JSON` for the audit). The nightly buy is a self-deal and builds no market
+secrets (`MTOK_EVM_PRIVATE_KEY` from `mtok-prod-seller-key` for the audit). The nightly buy is a self-deal and builds no market
 reputation.
 
 ### Infra

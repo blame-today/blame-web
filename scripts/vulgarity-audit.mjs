@@ -33,6 +33,7 @@ const TOP_N = Number(process.env.TOP_N || 200);
 const MTOK_API_BASE = process.env.MTOK_API_BASE || 'https://mtok.market/api';
 const MTOK_MODEL = process.env.MTOK_MODEL || '@cf/mistral/mistral-7b-instruct-v0.1';
 const MTOK_SELLER_ID = process.env.MTOK_SELLER_ID || 'agt_4kq6eypt';
+const MTOK_BUYER_AGENT_ID = process.env.MTOK_BUYER_AGENT_ID || MTOK_SELLER_ID;
 const MTOK_MAX_PRICE = Number(process.env.MTOK_MAX_PRICE || 0.5);
 const MTOK_BUDGET_USD = Number(process.env.MTOK_BUDGET_USD || 0.005);
 const MTOK_EXPECTED_WALLET = (process.env.MTOK_EXPECTED_WALLET || '0x3c1F928B7e685c84661A4296E2333FeDB9e1d06e').toLowerCase();
@@ -106,7 +107,7 @@ function evalFilter(labels) {
 
 export function buildJudgePrompt(labels) {
   const numbered = labels.map((l, i) => `${i}. ${l}`).join('\n');
-  return `You moderate a public "blame board" where people post a short thing to blame (a gripe). It's an edgy, anonymous board, so most things stay, but we keep it free of sexual content. Lean toward removing anything with a clear sexual read.
+  return `You moderate a public "blame board" where people post a short thing to blame (a gripe). It's an edgy, anonymous board, so most things stay, but we keep it free of sexual content. The JSON key is named "vulgar" for legacy reasons, but your job is sexual-content detection only. If an entry is not clearly sexual, leave it out.
 
 FLAG an entry if it is sexually explicit OR a sexual reference / innuendo / crude slang for sex, genitalia, or sex acts (e.g. "Boom Boom", "Donkey Boy", a sex-pun on a name). If a normal person would read it as "that's a sex thing", flag it.
 
@@ -115,12 +116,12 @@ Do NOT flag (these STAY):
 - gross-out or scatological gripes ("vomiting", "poop", "farts")
 - mere profanity or insults ("damn", "idiots", "assholes")
 - anything political, edgy, or offensive-but-not-sexual
-Being a bit overzealous on the sexual stuff is fine; the one line you must not cross is flagging a plainly innocent name or a non-sexual gripe.
+Do not flag politics, voters, parties, presidents, crime, disease, public figures, or controversial opinions unless the entry itself is clearly sexual. If unsure, do not flag it.
 
 Here are the entries:
 ${numbered}
 
-Return JSON only, with this exact shape: {"vulgar":["exact entry"]}. Copy flagged entries verbatim from the list. If none qualify, return {"vulgar":[]}.`;
+Return JSON only, with this exact shape: {"vulgar":[0,3]}. Each number must be an index from the list. Do not include the entry text. If none qualify, return {"vulgar":[]}.`;
 }
 
 export function parseJudgeResponse(text, labels) {
@@ -131,17 +132,57 @@ export function parseJudgeResponse(text, labels) {
   let parsed;
   try { parsed = JSON.parse(json); } catch { throw new Error('mtok seller returned unparseable JSON'); }
   if (!Array.isArray(parsed.vulgar)) throw new Error('mtok seller JSON is missing vulgar[]');
-  const set = new Set(parsed.vulgar.map((s) => String(s).trim()));
-  // Keep only strings that are actually in our input (guard against the model inventing / paraphrasing).
-  return labels.filter((l) => set.has(l));
+  const exact = new Set();
+  const indexes = new Set();
+  for (const item of parsed.vulgar) {
+    if (Number.isInteger(item) && item >= 0 && item < labels.length) {
+      indexes.add(item);
+      continue;
+    }
+    const s = String(item).trim();
+    if (/^\d+$/.test(s)) {
+      const n = Number(s);
+      if (n >= 0 && n < labels.length) indexes.add(n);
+      continue;
+    }
+    const numbered = s.match(/^(\d+)\.\s*(.+)$/);
+    if (numbered) {
+      const n = Number(numbered[1]);
+      if (n >= 0 && n < labels.length && labels[n] === numbered[2].trim()) indexes.add(n);
+      continue;
+    }
+    exact.add(s);
+  }
+  // Keep only labels that are actually in our input (guard against invented/paraphrased strings).
+  return labels.filter((l, i) => indexes.has(i) || exact.has(l));
 }
 
-export function parseMtokIdentity(raw) {
-  if (!raw) throw new Error('MTOK_IDENTITY_JSON is not set (put it in .hush and run via `hush exec`, or export it)');
+export function mtokConfigFromEnv(env = process.env) {
+  const rawKey = env.MTOK_EVM_PRIVATE_KEY;
+  if (rawKey) {
+    return {
+      method: 'create',
+      opts: {
+        apiBase: env.MTOK_API_BASE || MTOK_API_BASE,
+        chainId: 8453,
+        evmPrivateKey: '0x' + String(rawKey).replace(/^0x/, ''),
+        agentId: env.MTOK_BUYER_AGENT_ID || MTOK_BUYER_AGENT_ID,
+      },
+    };
+  }
+
+  const raw = env.MTOK_IDENTITY_JSON;
+  if (!raw) {
+    throw new Error('MTOK_EVM_PRIVATE_KEY or MTOK_IDENTITY_JSON is not set (put it in .hush and run via `hush exec`, or export it)');
+  }
   try {
     const identity = JSON.parse(raw);
     if (!identity || typeof identity !== 'object') throw new Error('not an object');
-    return identity;
+    return {
+      method: 'fromIdentity',
+      identity,
+      opts: { apiBase: env.MTOK_API_BASE || MTOK_API_BASE, chainId: 8453 },
+    };
   } catch {
     throw new Error('MTOK_IDENTITY_JSON must be a JSON mtok identity');
   }
@@ -156,11 +197,13 @@ export async function judge(labels, { env = process.env, importMtok = () => impo
   }
 
   const { Mtok } = await importMtok();
-  const identity = parseMtokIdentity(env.MTOK_IDENTITY_JSON);
-  const mtok = await Mtok.fromIdentity(identity, { apiBase: env.MTOK_API_BASE || MTOK_API_BASE, chainId: 8453 });
+  const cfg = mtokConfigFromEnv(env);
+  const mtok = cfg.method === 'create'
+    ? await Mtok.create(cfg.opts)
+    : await Mtok.fromIdentity(cfg.identity, cfg.opts);
   const wallet = String(mtok.identity?.address || mtok.account?.address || '').toLowerCase();
   const expectedWallet = String(env.MTOK_EXPECTED_WALLET || MTOK_EXPECTED_WALLET).toLowerCase();
-  if (wallet !== expectedWallet) throw new Error(`mtok identity wallet ${wallet || '(missing)'} does not match expected house seller wallet`);
+  if (wallet !== expectedWallet) throw new Error(`mtok buyer wallet ${wallet || '(missing)'} does not match expected house seller wallet`);
 
   const model = env.MTOK_MODEL || MTOK_MODEL;
   const result = await mtok.buy({
