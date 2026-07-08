@@ -7,10 +7,10 @@
 // vulgar, and turns the flagged strings into literal blocklist entries. The model judges WHAT is
 // vulgar; this code decides HOW to block it (dumb literals, never LLM-authored regexes).
 //
-//     hush exec -- node scripts/vulgarity-audit.mjs             # local (identity from .hush)
-//     MTOK_IDENTITY_JSON=... node scripts/vulgarity-audit.mjs   # CI
+//     hush exec -- node scripts/vulgarity-audit.mjs             # local (key from .hush)
+//     MTOK_EVM_PRIVATE_KEY=... node scripts/vulgarity-audit.mjs # CI
 //
-// Env: MTOK_IDENTITY_JSON (required), TOP_N (default 200), MTOK_MODEL (default cheapest house seller model).
+// Env: MTOK_EVM_PRIVATE_KEY (required), TOP_N (default 200), MTOK_MODEL (default reliable house seller model).
 // Needs Node 24+ (the helper imports the .ts filter via type stripping).
 //
 // Exit codes: 0 = ran clean (may or may not have patched, see $has_changes), 2 = collateral guard
@@ -31,11 +31,12 @@ const FILTER_TS = join(ROOT, 'src/lib/filter.ts');
 const AUDIT_TEST = join(ROOT, 'tests/audit.test.ts');
 const TOP_N = Number(process.env.TOP_N || 200);
 const MTOK_API_BASE = process.env.MTOK_API_BASE || 'https://mtok.market/api';
-const MTOK_MODEL = process.env.MTOK_MODEL || '@cf/mistral/mistral-7b-instruct-v0.1';
+const MTOK_MODEL = process.env.MTOK_MODEL || '@cf/mistralai/mistral-small-3.1-24b-instruct';
 const MTOK_SELLER_ID = process.env.MTOK_SELLER_ID || 'agt_4kq6eypt';
 const MTOK_BUYER_AGENT_ID = process.env.MTOK_BUYER_AGENT_ID || MTOK_SELLER_ID;
-const MTOK_MAX_PRICE = Number(process.env.MTOK_MAX_PRICE || 0.5);
-const MTOK_BUDGET_USD = Number(process.env.MTOK_BUDGET_USD || 0.005);
+const MTOK_MAX_PRICE = Number(process.env.MTOK_MAX_PRICE || 2.5);
+const MTOK_CHUNK_SIZE = Number(process.env.MTOK_CHUNK_SIZE || 60);
+const MTOK_CHUNK_BUDGET_USD = Number(process.env.MTOK_CHUNK_BUDGET_USD || process.env.MTOK_BUDGET_USD || 0.006);
 const MTOK_EXPECTED_WALLET = (process.env.MTOK_EXPECTED_WALLET || '0x3c1F928B7e685c84661A4296E2333FeDB9e1d06e').toLowerCase();
 
 const RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.snort.social', 'wss://nostr.mom', 'wss://relay.nostr.net'];
@@ -157,6 +158,13 @@ export function parseJudgeResponse(text, labels) {
   return labels.filter((l, i) => indexes.has(i) || exact.has(l));
 }
 
+const chunksOf = (items, size) => {
+  const n = Math.max(1, Number(size) || items.length || 1);
+  const out = [];
+  for (let i = 0; i < items.length; i += n) out.push(items.slice(i, i + n));
+  return out;
+};
+
 export function mtokConfigFromEnv(env = process.env) {
   const rawKey = env.MTOK_EVM_PRIVATE_KEY;
   if (rawKey) {
@@ -206,22 +214,26 @@ export async function judge(labels, { env = process.env, importMtok = () => impo
   if (wallet !== expectedWallet) throw new Error(`mtok buyer wallet ${wallet || '(missing)'} does not match expected house seller wallet`);
 
   const model = env.MTOK_MODEL || MTOK_MODEL;
-  const result = await mtok.buy({
-    model,
-    sellerId: env.MTOK_SELLER_ID || MTOK_SELLER_ID,
-    maxPrice: Number(env.MTOK_MAX_PRICE || MTOK_MAX_PRICE),
-    budget: Number(env.MTOK_BUDGET_USD || MTOK_BUDGET_USD),
-    requests: [{
+  const flagged = new Set();
+  for (const chunk of chunksOf(labels, Number(env.MTOK_CHUNK_SIZE || MTOK_CHUNK_SIZE))) {
+    const result = await mtok.buy({
       model,
-      temperature: 0,
-      max_tokens: 384,
-      response_format: { type: 'json_object' },
-      messages: [{ role: 'user', content: buildJudgePrompt(labels) }],
-    }],
-  });
-  if (result.status !== 'ok') throw new Error(`mtok buy failed: ${result.status}`);
-  const text = result.completions?.[0]?.choices?.[0]?.message?.content;
-  return parseJudgeResponse(text, labels);
+      sellerId: env.MTOK_SELLER_ID || MTOK_SELLER_ID,
+      maxPrice: Number(env.MTOK_MAX_PRICE || MTOK_MAX_PRICE),
+      budget: Number(env.MTOK_CHUNK_BUDGET_USD || env.MTOK_BUDGET_USD || MTOK_CHUNK_BUDGET_USD),
+      requests: [{
+        model,
+        temperature: 0,
+        max_tokens: 384,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: buildJudgePrompt(chunk) }],
+      }],
+    });
+    if (result.status !== 'ok') throw new Error(`mtok buy failed: ${result.status}`);
+    const text = result.completions?.[0]?.choices?.[0]?.message?.content;
+    for (const label of parseJudgeResponse(text, chunk)) flagged.add(label);
+  }
+  return labels.filter((label) => flagged.has(label));
 }
 
 // --- patch: append literal blocklist entries between the audit markers ----------------------------

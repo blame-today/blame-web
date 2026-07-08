@@ -41,12 +41,40 @@ describe('vulgarity audit mtok judge', () => {
         agentId: 'agt_4kq6eypt',
       },
       buy: {
-        model: '@cf/mistral/mistral-7b-instruct-v0.1',
+        model: '@cf/mistralai/mistral-small-3.1-24b-instruct',
         sellerId: 'agt_4kq6eypt',
-        maxPrice: 0.5,
-        budget: 0.005,
+        maxPrice: 2.5,
+        budget: 0.006,
       },
     });
+  });
+
+  it('chunks large label batches into separate tiny paid draws', async () => {
+    const buys: unknown[] = [];
+    const fakeMtok = {
+      create: async () => ({
+        identity: { address: HOUSE },
+        async buy(opts: unknown) {
+          buys.push(opts);
+          return {
+            status: 'ok',
+            completions: [{ choices: [{ message: { content: buys.length === 1 ? '{"vulgar":[1]}' : '{"vulgar":[0]}' } }] }],
+          };
+        },
+      }),
+    };
+
+    const got = await judge(['ok', 'Boom Boom', 'Donkey Boy'], {
+      env: { MTOK_EVM_PRIVATE_KEY: '0x' + '1'.repeat(64), MTOK_CHUNK_SIZE: '2' },
+      importMtok: async () => ({ Mtok: fakeMtok }),
+    });
+
+    expect(got).toEqual(['Boom Boom', 'Donkey Boy']);
+    expect(buys).toHaveLength(2);
+    expect(buys).toEqual([
+      expect.objectContaining({ budget: 0.006, requests: [expect.objectContaining({ messages: [expect.objectContaining({ content: expect.stringContaining('1. Boom Boom') })] })] }),
+      expect.objectContaining({ budget: 0.006, requests: [expect.objectContaining({ messages: [expect.objectContaining({ content: expect.stringContaining('0. Donkey Boy') })] })] }),
+    ]);
   });
 
   it('refuses to spend unless the buyer key derives the house seller wallet', async () => {
