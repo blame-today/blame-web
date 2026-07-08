@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkContent } from '$lib/filter';
 
-// Auto-maintained by scripts/vulgarity-audit.mjs (issue #22). Each run appends the entries gemini
+// Auto-maintained by scripts/vulgarity-audit.mjs (issue #22). Each run appends the entries mtok
 // flagged that day, as a standing regression that they stay blocked. Do not hand-edit.
 describe('audited vulgar blocklist', () => {
   it('audit 2026-07-03: blocks the flagged vulgar entries', () => {

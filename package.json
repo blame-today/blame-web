@@ -16,6 +16,7 @@
   "dependencies": {
     "@noble/secp256k1": "1.7.1",
     "compromise": "^14.15.1",
+    "mtok-sdk": "^0.1.5",
     "obscenity": "0.4.3"
   },
   "devDependencies": {
