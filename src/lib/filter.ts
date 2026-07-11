@@ -44,6 +44,7 @@ const BLOCK: RegExp[] = [
   /Mushy miralax mound/i, // audited 2026-07-04
   /the divorce lawyer/i, // audited 2026-07-04
   /aliens making you gay/i, // audited 2026-07-07
+  /libido/i, // audited 2026-07-11
   // audit:end
 ];
 const hasBlocked = (txt: string): boolean => BLOCK.some((re) => re.test(txt));
