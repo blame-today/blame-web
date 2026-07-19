@@ -1,6 +1,7 @@
 name: vulgarity audit
 
-# Daily sweep (issue #22). The content filter (src/lib/filter.ts) is word-level, so phrase-level
+# Daily sweep (built in issue #22; each modifying run now files its own per-sweep issue). The
+# content filter (src/lib/filter.ts) is word-level, so phrase-level
 # vulgarity where no single word is profane lands on the board (e.g. "fingering the dog"). This
 # pulls the top blame targets by votes, asks mtok.market which of the currently DISPLAYED ones are
 # genuinely vulgar, and turns the flagged strings into literal blocklist entries. The model judges
@@ -52,30 +53,28 @@ jobs:
       # prefer a reviewable PR, but the blame-today ORG blocks Actions from creating PRs (its
       # org-level Actions setting). To switch back to the PR flow, flip that org setting ("Read and
       # write" + "Allow GitHub Actions to create and approve pull requests") and restore the PR step.
-      - name: Commit the patch to main
-        if: steps.audit.outputs.has_changes == '1'
-        run: |
-          set -euo pipefail
-          git config user.name 'blame-audit-bot'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/lib/filter.ts tests/audit.test.ts
-          git commit -m "filter: block ${{ steps.audit.outputs.flagged_count }} mtok-flagged vulgar entries (refs #22)"
-          # main isn't protected + the audit runs solo (concurrency group), so a plain push is safe;
-          # rebase once in case an unrelated push raced in.
-          git pull --rebase origin main
-          git push origin HEAD:main
-
-      # Leave a trail on the issue whenever the job modifies the filter, so the blocklist changes are
-      # reviewable in one place (audit-comment.md is written by the script; it's untracked, never committed).
-      - name: Note the change on issue #22
+      # Each modifying sweep gets its OWN formulaic issue (a per-change record), rather than piling
+      # onto one umbrella issue forever. Create it first so the commit can reference it, then commit +
+      # push the fix, then close the issue as a completed record with the commit sha + run link.
+      # audit-comment.md is written by the script (untracked, never committed).
+      - name: Open the change issue, commit to main, close it
         if: steps.audit.outputs.has_changes == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          {
-            cat audit-comment.md
-            echo
-            echo "shipped in \`$(git rev-parse --short HEAD)\` via [this run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
-          } > issue-comment.md
-          gh issue comment 22 --repo ${{ github.repository }} --body-file issue-comment.md
+          N_FLAGGED="${{ steps.audit.outputs.flagged_count }}"
+          ISSUE_URL=$(gh issue create --repo ${{ github.repository }} \
+            --title "vulgarity sweep $(date +%F): blocked $N_FLAGGED" \
+            --body-file audit-comment.md)
+          ISSUE=$(basename "$ISSUE_URL")
+          git config user.name 'blame-audit-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/lib/filter.ts tests/audit.test.ts
+          git commit -m "filter: block $N_FLAGGED vulgar entries (refs #$ISSUE)"
+          # main isn't protected + the audit runs solo (concurrency group), so a plain push is safe;
+          # rebase once in case an unrelated push raced in.
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh issue close "$ISSUE" --repo ${{ github.repository }} \
+            --comment "shipped in \`$(git rev-parse --short HEAD)\` via [this run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
