@@ -1,4 +1,5 @@
 CLOUDFLARE_API_TOKEN=blame-cf-iac-token
 AWS_ACCESS_KEY_ID=blame-r2-access-key-id
 AWS_SECRET_ACCESS_KEY=blame-r2-secret-access-key
+MTOK_EVM_PRIVATE_KEY=mtok-prod-seller-key
 GEMINI_API_KEY=blame-llm-api-key

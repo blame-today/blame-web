@@ -34,15 +34,12 @@ const BLOCK: RegExp[] = [
   /p[e3]n[i1l]s|pensis/i, // penis / p3nis / pen1s / pensis (the i/s transpose)
   /\bs[\s.\-_*]+e[\s.\-_*]*x\b/i, // deliberately broken "sex": "s ex", "s.ex", "s-e-x" (plain "sex" stays legit)
   /rectum/i, // "prolapsed rectum" and friends
-  // audit:begin — literals auto-added by scripts/vulgarity-audit.mjs (gemini-flagged, guard-checked). do not hand-edit.
+  // audit:begin — literals auto-added by scripts/vulgarity-audit.mjs (mtok-flagged, gemini fallback, guard-checked). do not hand-edit.
   /Donkey Boy/i, // audited 2026-07-03
   /Boom Boom/i, // audited 2026-07-03
   /Shrex/i, // audited 2026-07-03
-  /Gas pains/i, // audited 2026-07-03
   /vomiting at you deliberately/i, // audited 2026-07-04
-  /Epstein/i, // audited 2026-07-04
   /Mushy miralax mound/i, // audited 2026-07-04
-  /the divorce lawyer/i, // audited 2026-07-04
   /aliens making you gay/i, // audited 2026-07-07
   /libido/i, // audited 2026-07-11
   /Kuk/i, // audited 2026-07-13

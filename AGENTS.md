@@ -63,10 +63,14 @@ nothing ran them).
 The filter is word-level (the `obscenity` lib), so phrase-level vulgarity where no single word is
 profane can land on the board (a real one: "fingering the dog"). [`.github/workflows/vulgarity-audit.yml`](.github/workflows/vulgarity-audit.yml)
 runs [`scripts/vulgarity-audit.mjs`](scripts/vulgarity-audit.mjs) daily (and on `workflow_dispatch`):
-pull the top ~200 targets by votes, ask **gemini** which of the currently *displayed* ones are
-vulgar, and append literal blocklist entries between the `audit:begin`/`audit:end` markers in
-`filter.ts`. The model judges WHAT; the script decides HOW (dumb literals, never LLM-authored
-regexes). A **collateral guard** runs the patched filter over the whole top-N and refuses to write
+pull the top ~200 targets by votes, buy a cheap draw from our **mtok.market** house seller (cycling a
+mix of models across chunks) to ask which of the currently *displayed* ones are vulgar, and append
+literal blocklist entries between the `audit:begin`/`audit:end` markers in `filter.ts`. When mtok
+can't complete (wallet unfunded, market down), it falls back to **gemini** so the sweep still runs.
+The judge targets sexual content only, and never a person's name on association alone (Epstein etc.
+stay). The model judges WHAT; the script decides HOW
+(dumb literals, never LLM-authored regexes). A **collateral guard** runs the patched filter over the
+whole top-N and refuses to write
 if it would block any un-flagged entry; `npm test` must pass too. Only then does it commit straight
 to main (one clean, revertible `(refs #22)` commit, which deploys). It would open a PR instead, but
 the blame-today org blocks Actions-created PRs; flip that org Actions setting to restore the PR flow.
@@ -75,11 +79,13 @@ appends that day's flagged entries as a standing regression) — don't hand-edit
 
 ### Secrets
 Managed with [hush](https://github.com/royashbrook/hush): stored once in the keychain, injected
-straight into `tofu` / `gh` / `node`, never printed or committed. This project's hush items use a
-`blame-` prefix (default namespace, so they group in one keychain search): `blame-cf-iac-token`,
-`blame-r2-*`, `blame-mcp-signing-key`, and `blame-llm-api-key` (the gemini key the audit uses). The
-committed [`.hush`](.hush) manifest maps them to env vars. CI reads the same values from GH secrets
-(the audit reads `GEMINI_API_KEY`).
+straight into `tofu` / `gh` / `node`, never printed or committed. This project's own hush items use
+a `blame-` prefix (default namespace, so they group in one keychain search): `blame-cf-iac-token`,
+`blame-r2-*`, `blame-mcp-signing-key`, and `blame-llm-api-key` (the gemini fallback key). The audit
+also uses the shared mtok house seller key. The committed [`.hush`](.hush) manifest maps them to env
+vars. CI reads the same values from GH secrets (`MTOK_EVM_PRIVATE_KEY` from `mtok-prod-seller-key`,
+plus `GEMINI_API_KEY` for the fallback). The nightly buy is a self-deal and builds no market
+reputation. It needs a little ETH for gas on Base; if the wallet runs dry the audit rides on gemini.
 
 ### Infra
 Cloudflare free tier. **OpenTofu** owns DNS / zone settings / redirect rule / email routing

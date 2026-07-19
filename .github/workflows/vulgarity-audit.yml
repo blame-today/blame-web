@@ -2,12 +2,12 @@ name: vulgarity audit
 
 # Daily sweep (issue #22). The content filter (src/lib/filter.ts) is word-level, so phrase-level
 # vulgarity where no single word is profane lands on the board (e.g. "fingering the dog"). This
-# pulls the top blame targets by votes, asks gemini which of the currently DISPLAYED ones are
+# pulls the top blame targets by votes, asks mtok.market which of the currently DISPLAYED ones are
 # genuinely vulgar, and turns the flagged strings into literal blocklist entries. The model judges
 # WHAT is vulgar; scripts/vulgarity-audit.mjs decides HOW to block it (dumb literals, never
 # LLM-authored regexes) and refuses to write if the patch would hide any un-flagged entry
-# (the collateral guard). It also runs `npm test` before staging. Only then do we open + merge a
-# PR, so the next deploy hides them. workflow_dispatch is the "run now" button.
+# (the collateral guard). It also runs `npm test` before staging. Only then does it commit straight
+# to main, so the next deploy hides them. workflow_dispatch is the "run now" button.
 
 on:
   schedule:
@@ -17,6 +17,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: vulgarity-audit
@@ -42,7 +43,8 @@ jobs:
       - name: Run the audit (fetch, judge, patch, guard, test)
         id: audit
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MTOK_EVM_PRIVATE_KEY: ${{ secrets.MTOK_EVM_PRIVATE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # fallback when mtok can't complete
         run: node scripts/vulgarity-audit.mjs
 
       # Commit straight to main. The audit already validated in-job (collateral guard + npm test),
@@ -57,8 +59,23 @@ jobs:
           git config user.name 'blame-audit-bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/lib/filter.ts tests/audit.test.ts
-          git commit -m "filter: block ${{ steps.audit.outputs.flagged_count }} gemini-flagged vulgar entries (refs #22)"
+          git commit -m "filter: block ${{ steps.audit.outputs.flagged_count }} mtok-flagged vulgar entries (refs #22)"
           # main isn't protected + the audit runs solo (concurrency group), so a plain push is safe;
           # rebase once in case an unrelated push raced in.
           git pull --rebase origin main
           git push origin HEAD:main
+
+      # Leave a trail on the issue whenever the job modifies the filter, so the blocklist changes are
+      # reviewable in one place (audit-comment.md is written by the script; it's untracked, never committed).
+      - name: Note the change on issue #22
+        if: steps.audit.outputs.has_changes == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          {
+            cat audit-comment.md
+            echo
+            echo "shipped in \`$(git rev-parse --short HEAD)\` via [this run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          } > issue-comment.md
+          gh issue comment 22 --repo ${{ github.repository }} --body-file issue-comment.md
