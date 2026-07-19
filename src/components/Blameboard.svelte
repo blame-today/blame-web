@@ -6,8 +6,8 @@
   import NewsList from '$components/NewsList.svelte';
 
   const FILTERS = [
-    { key: 'all', label: 'All' },
     { key: '24h', label: '24h' },
+    { key: 'all', label: 'All' },
     { key: 'mine', label: 'Mine' },
     { key: 'news', label: 'News' },
   ] as const;
