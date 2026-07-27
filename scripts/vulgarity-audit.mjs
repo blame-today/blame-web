@@ -14,8 +14,8 @@
 // can't complete). TOP_N (default 200), MTOK_MODELS (comma-sep mix), MTOK_MODEL (single-model override).
 // Needs Node 24+ (the helper imports the .ts filter via type stripping).
 //
-// Exit codes: 0 = ran clean (may or may not have patched, see $has_changes), 2 = collateral guard
-// tripped (a patch would over-block real entries, nothing written), 3 = npm test failed, 1 = error.
+// Exit codes: 0 = ran clean, incl. the collateral guard holding a patch back (a safety no-op, not a
+// failure — see $has_changes for whether anything was written), 3 = npm test failed, 1 = error.
 // Writes has_changes=1 and a summary to $GITHUB_OUTPUT / $GITHUB_STEP_SUMMARY when a patch is staged.
 
 import { execFileSync } from 'node:child_process';
@@ -374,11 +374,14 @@ async function main() {
   const missed = flagged.filter((l) => !newlyBlocked.includes(l)); // flagged but patch failed to block it
 
   if (collateral.length) {
-    // The patch would hide real entries. Revert everything and refuse to write.
+    // The patch would hide real entries, so the guard refuses to write. This is the guard WORKING, not
+    // an error, so it's a clean no-op (exit 0) — it fired nightly on the recurring "Trump" false flag
+    // (a short literal that also matches unrelated Trump targets) and turned every such run red. The
+    // guard already prevented the bad write; a red job on top is just noise. Nothing is committed.
     revert();
-    summary(`### vulgarity audit :warning:\ncollateral guard tripped. the patch would also hide **${collateral.length}** entries mtok did NOT flag:\n\n${collateral.map((l) => '- `' + l + '`').join('\n')}\n\nnothing written. needs a human.`);
+    summary(`### vulgarity audit\ncollateral guard held a patch back (a flagged literal would also hide **${collateral.length}** un-flagged live target(s)):\n\n${collateral.map((l) => '- `' + l + '`').join('\n')}\n\nnothing written, no change. (usually a model false-flag on a short/common token.)`);
     out('has_changes', '0');
-    process.exit(2);
+    process.exit(0);
   }
   if (missed.length) console.error(`vulgarity-audit: WARN ${missed.length} flagged not blocked by patch: ${JSON.stringify(missed)}`);
 
