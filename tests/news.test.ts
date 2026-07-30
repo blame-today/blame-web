@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import nlp from 'compromise';
 import { cleanEntity, parseCnnLite, parseRss, extractItems, news, canRefresh, REFRESH_COOLDOWN_MS, type Nlp } from '$lib/news.svelte';
 
@@ -143,5 +143,68 @@ describe('extractItems', () => {
   it('keeps a quoted phrase as one votable item (positive)', () => {
     const texts = extractItems([{ title: helHeadline, url: 'u' }], nlp as unknown as Nlp).map((i) => i.text);
     expect(texts).toContain('Highway to Hel');
+  });
+});
+
+describe('stale-cache auto-refresh (#27)', () => {
+  const HTML = `<html><body>
+    <a href="/a">Senate passes the spending bill after a long night of debate</a>
+    <a href="/b">Storm system moves across the Gulf toward the Florida coast</a>
+  </body></html>`;
+
+  async function freshModule() {
+    vi.resetModules();
+    localStorage.clear();
+    return await import('$lib/news.svelte');
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('re-fetches when the cached list has aged past the cooldown', async () => {
+    const n = await freshModule();
+    const fetchMock = vi.fn(async () => new Response(HTML, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    // A cached list from yesterday: the tab used to sit on this forever.
+    localStorage.setItem(
+      'blm_news',
+      JSON.stringify({ items: [{ text: 'Yesterday', mentions: 1, url: 'https://x', headline: 'old' }], fetchedAt: Date.now() - n.REFRESH_COOLDOWN_MS - 1000, source: { name: 'CNN Lite', url: 'https://lite.cnn.com/' } }),
+    );
+
+    await n.loadNews(); // opening the tab, not a forced refresh
+    expect(fetchMock).toHaveBeenCalled();
+    expect(n.news.items.some((i) => i.text === 'Yesterday')).toBe(false);
+  });
+
+  it('serves a fresh cache without touching the network', async () => {
+    const n = await freshModule();
+    const fetchMock = vi.fn(async () => new Response(HTML, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    localStorage.setItem(
+      'blm_news',
+      JSON.stringify({ items: [{ text: 'Recent', mentions: 1, url: 'https://x', headline: 'new' }], fetchedAt: Date.now(), source: { name: 'CNN Lite', url: 'https://lite.cnn.com/' } }),
+    );
+
+    await n.loadNews();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(n.news.items[0].text).toBe('Recent');
+  });
+
+  it('still blocks a manual refresh inside the cooldown', async () => {
+    const n = await freshModule();
+    const fetchMock = vi.fn(async () => new Response(HTML, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    localStorage.setItem(
+      'blm_news',
+      JSON.stringify({ items: [{ text: 'Recent', mentions: 1, url: 'https://x', headline: 'new' }], fetchedAt: Date.now(), source: { name: 'CNN Lite', url: 'https://lite.cnn.com/' } }),
+    );
+
+    await n.loadNews(); // restore the cache first
+    await n.loadNews(true); // button press, still cooling down
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

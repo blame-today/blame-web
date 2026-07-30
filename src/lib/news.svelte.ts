@@ -4,7 +4,8 @@
 //
 // Sources are tried in order until one answers with headlines (CNN Lite, then Fox as a backup —
 // the only two of the usual suspects that send permissive CORS headers to a browser). It's just a
-// typing-saver, so we're gentle: fetched once, cached, manual refresh locked for 24h. Foul
+// typing-saver, so we're gentle: cached, and re-fetched at most once every 24h whether that's the
+// tab auto-refreshing a stale list or the button being pressed. Foul
 // headlines are dropped wholesale so nothing crude is ever surfaced.
 import { checkContent, isFoul } from './filter';
 import type { NewsItem } from './types';
@@ -166,12 +167,17 @@ function saveCache(): void {
   } catch {}
 }
 
-// Lazy entry point. First call restores the cache; only fetches when there's nothing cached, or on
-// a forced refresh once the 24h cooldown has elapsed. Sources are tried in order until one answers.
+// Lazy entry point. First call restores the cache; fetches when there's nothing cached, when the
+// cached list has aged past the 24h cooldown, or on a forced refresh once that cooldown has
+// elapsed. Sources are tried in order until one answers.
 export async function loadNews(force = false): Promise<void> {
   if (news.status === 'idle') restoreCache();
   if (news.status === 'loading') return;
-  if (!force && news.status === 'ready') return; // already have a list — never auto-refresh
+  // A fresh cache serves instantly with no fetch. A STALE one re-fetches on its own, so opening
+  // the tab tomorrow doesn't show yesterday's headlines forever (the button used to be the only
+  // way to move it). Still at most one fetch per 24h per browser, so the sources see no more
+  // traffic than before. (#27)
+  if (!force && news.status === 'ready' && !canRefresh()) return;
   if (force && !canRefresh()) return; // still cooling down
   news.status = 'loading';
   news.error = '';
