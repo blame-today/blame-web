@@ -4,12 +4,21 @@ name: daily blame
 # fired when that machine happened to be awake and kept its own drifting copies of the relay list,
 # the signing code, and a topic pool frozen since June.
 #
-# Same split as the vulgarity audit: the MODEL decides WHAT to blame, deterministic code decides HOW
-# it reaches the board. Gemini proposes the day's targets and none of them are trusted: every one is
-# validated by the SHIPPED filter (scripts/daily-blame.mjs imports src/lib/filter.ts directly under
-# node's type stripping), so this can never post something the composer would refuse from a human.
-# No key, a refusal, or a rate limit falls back to the static pool. workflow_dispatch is "run now",
-# and DRY_RUN there picks and validates without publishing anything.
+# Half the day's picks pile onto targets ALREADY on the board so it gets deeper and not just wider,
+# and the rest are fresh. Same split as the vulgarity audit otherwise: the MODEL decides WHAT to
+# blame, deterministic code decides HOW it reaches the board. Nothing the model returns is trusted:
+# every pick is validated by the SHIPPED filter (scripts/daily-blame.mjs imports src/lib/filter.ts
+# directly under node's type stripping), so this can never post what the composer would refuse from
+# a human. No key, a refusal, or a rate limit falls back to the static pool.
+#
+# The pile-on half additionally passes an AMPLIFY screen, which is a higher bar than the filter and
+# deliberately so: the filter decides what a person may POST, the screen decides what this bot may
+# add votes to. A live board draw offered up "the jews" and "Putin", both perfectly clean by the
+# filter. A person blaming either is their business; the site pouring 43 automated votes onto them
+# is the site taking a position. The screen must APPROVE an entry, never merely not object, and it
+# fails CLOSED, so an outage means an all-fresh day rather than an unscreened pile-on.
+#
+# workflow_dispatch is "run now", and DRY_RUN there picks, screens and validates without publishing.
 
 on:
   schedule:

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FALLBACK_POOL, buildPrompt, pickN, pickTopics, validate } from '../scripts/daily-blame.mjs';
+import { FALLBACK_POOL, buildPrompt, pickN, pickPileOn, pickTopics, screenPileOn, validate } from '../scripts/daily-blame.mjs';
 import { MAX_LENGTH } from '$lib/filter';
 
 describe('validate (#28)', () => {
@@ -90,6 +90,82 @@ describe('pickTopics fallback (#28)', () => {
       expect(topics).toHaveLength(4); // 1 usable from the model, 3 from the pool
       expect(topics[0]).toBe('loading spinners');
       expect(topics).not.toContain('damn printers');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+// The amplify screen. checkContent decides what a PERSON may post; this decides what the BOT may
+// pile votes onto, which is a higher bar. A live board draw offered "the jews" and "Putin", both
+// clean by checkContent, which is why this exists.
+describe('amplify screen (#28)', () => {
+  const board = (entries: string[]) => new Map(entries.map((t, i) => [t.toLowerCase(), { id: 'id' + i, at: 1000 + i, text: t }]));
+
+  it('only picks entries the screen approved', () => {
+    const got = pickPileOn(board(['traffic lights', 'Putin', 'the jews', 'printers']), 4, ['traffic lights', 'printers']);
+    expect(got.sort()).toEqual(['printers', 'traffic lights']);
+  });
+
+  it('picks nothing when the screen approved nothing, rather than falling back to unscreened', () => {
+    expect(pickPileOn(board(['Putin', 'the jews']), 4, [])).toEqual([]);
+  });
+
+  it('still applies checkContent on top of the screen', () => {
+    // A target that predates a filter tightening is still sitting on the board. Even an approval
+    // must not get it re-promoted.
+    const got = pickPileOn(board(['damn printers', 'traffic lights']), 4, ['damn printers', 'traffic lights']);
+    expect(got).toEqual(['traffic lights']);
+  });
+
+  it('prefers the recent end of the board, since those are the topical ones', () => {
+    const old = { id: 'a', at: 1, text: 'ancient gripe' };
+    const fresh = { id: 'b', at: 9999, text: 'todays gripe' };
+    const m = new Map([
+      ['ancient gripe', old],
+      ['todays gripe', fresh],
+    ]);
+    const got = pickPileOn(m, 1, ['ancient gripe', 'todays gripe'], 1); // window of 1 = newest only
+    expect(got).toEqual(['todays gripe']);
+  });
+
+  it('fails CLOSED when the screening call errors, so an outage means no pile-on', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 500 })));
+    try {
+      expect(await screenPileOn(['traffic lights'], 'k', vi.fn(async () => new Response('nope', { status: 401 })))).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('fails closed with no api key at all', async () => {
+    expect(await screenPileOn(['traffic lights'], undefined)).toEqual([]);
+  });
+
+  it('resolves approvals by index into our own list, so the model cannot approve a string we never showed it', async () => {
+    const reply = (v: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(v) }] } }] }), { status: 200 });
+    const got = await screenPileOn(['traffic lights', 'Putin'], 'k', vi.fn(async () => reply([1, 99, 'the jews'])));
+    expect(got).toEqual(['traffic lights']); // 99 out of range and the raw string both dropped
+  });
+});
+
+describe('the day mix (#28)', () => {
+  it('splits the picks between the board and fresh material', async () => {
+    const reply = (arr: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(arr) }] } }] }), { status: 200 });
+    const boardMap = new Map(['printers', 'traffic lights', 'rainy weekends'].map((t, i) => [t, { id: 'i' + i, at: i, text: t }]));
+    let call = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        call++;
+        return call === 1 ? reply([1, 2, 3]) : reply(['wet socks', 'empty fridge', 'printer jams']); // screen, then fresh
+      }),
+    );
+    try {
+      const { topics, source } = await pickTopics(4, { GEMINI_API_KEY: 'k', PILE_ON: '2' }, boardMap);
+      expect(topics).toHaveLength(4);
+      expect(topics.filter((t) => boardMap.has(t))).toHaveLength(2);
+      expect(source).toContain('2 from the board');
     } finally {
       vi.unstubAllGlobals();
     }
