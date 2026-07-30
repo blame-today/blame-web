@@ -1,0 +1,57 @@
+name: daily blame
+
+# The daily seeding run for the board (#28). This replaces a personal machine's crontab, which only
+# fired when that machine happened to be awake and kept its own drifting copies of the relay list,
+# the signing code, and a topic pool frozen since June.
+#
+# Same split as the vulgarity audit: the MODEL decides WHAT to blame, deterministic code decides HOW
+# it reaches the board. Gemini proposes the day's targets and none of them are trusted: every one is
+# validated by the SHIPPED filter (scripts/daily-blame.mjs imports src/lib/filter.ts directly under
+# node's type stripping), so this can never post something the composer would refuse from a human.
+# No key, a refusal, or a rate limit falls back to the static pool. workflow_dispatch is "run now",
+# and DRY_RUN there picks and validates without publishing anything.
+
+on:
+  schedule:
+    - cron: '7 13 * * *' # 13:07 UTC daily (~9am ET), matching the crontab it replaced, off the hour
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pick and validate topics without publishing to any relay'
+        type: boolean
+        default: false
+      topics:
+        description: 'How many targets to blame'
+        default: '10'
+
+permissions:
+  contents: read # picks topics and publishes to relays; never writes to the repo
+
+concurrency:
+  group: daily-blame
+  cancel-in-progress: false
+
+jobs:
+  blame:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          # node 24+ strips TS types, so the script imports src/lib/{filter,crypto,relays}.ts
+          # directly. That is the whole point: one copy of the filter, the signing, and the relay
+          # list, not a second set quietly going stale the way the machine cron's did.
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Blame the day's targets
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TOPICS: ${{ inputs.topics || '10' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: node scripts/daily-blame.mjs

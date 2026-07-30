@@ -5,14 +5,8 @@
 import { signEvent, nowSec } from './crypto';
 import type { NostrEvent, RelayHandlers, RelayPool } from './types';
 
-const RELAYS = [
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-  'wss://relay.snort.social',
-  'wss://nostr.mom',
-  'wss://relay.nostr.net',
-];
-const TAG = 'pureblameapp';
+export { RELAYS, TAG } from './relays';
+import { RELAYS, TAG } from './relays';
 
 // Our two event types — kind 1 = a blame target, kind 7 = a vote — tagged so the relays can
 // find them. Throwaway key per event (see crypto.ts).
