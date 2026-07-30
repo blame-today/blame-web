@@ -68,7 +68,12 @@ type Conn = { ws: WebSocket; loaded: boolean };
 export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
   const conns: Record<string, Conn> = {};
   const okWaiters: Record<string, () => void> = {};
-  const countSubs: Record<string, { id: string; recent: boolean }> = {};
+  // An entry is normally cleared by the COUNT reply. A relay that doesn't implement NIP-45 (or
+  // drops the frame) never replies, so without a sweep resync would leak one entry per counted
+  // topic per cycle, forever. Stamp each and drop the unanswered ones. (#6)
+  const countSubs: Record<string, { id: string; recent: boolean; at: number }> = {};
+  const COUNT_SUB_TTL = 60000; // a relay that's going to answer does so well inside a resync cycle
+  let lastSweep = 0;
   let countN = 0;
 
   const isOpen = (c: Conn | undefined): c is Conn => !!c && c.ws.readyState === 1;
@@ -141,8 +146,13 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
   }
 
   function sendCount(ws: WebSocket, targetId: string, since?: number): void {
+    const now = Date.now();
+    if (now - lastSweep > COUNT_SUB_TTL) {
+      lastSweep = now; // throttled: sendCount fires hundreds of times per resync, the sweep once
+      for (const s in countSubs) if (now - countSubs[s].at > COUNT_SUB_TTL) delete countSubs[s];
+    }
     const sub = 'c' + ++countN;
-    countSubs[sub] = { id: targetId, recent: since !== undefined };
+    countSubs[sub] = { id: targetId, recent: since !== undefined, at: now };
     const filter: Record<string, unknown> = { kinds: [7], '#e': [targetId] };
     if (since !== undefined) filter.since = since; // windowed count (e.g. last 24h) for "hot"
     ws.send(JSON.stringify(['COUNT', sub, filter])); // count votes, don't fetch them

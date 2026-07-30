@@ -34,7 +34,13 @@ export const store = $state<{
 
 const byId = new Map<string, number>(); // id -> index into store.topics (stable; never reordered)
 const idxByText = new Map<string, string>(); // normalized text -> id (dedup blames by text)
-const seen: Record<string, 1> = {}; // reactionId -> 1 (dedup our echoes + the same vote from N relays)
+// reactionId -> 1 (dedup our echoes + the same vote from N relays). A Map, not a Record, because we
+// need insertion order to evict: a tab left open for days would otherwise grow this forever, one key
+// per distinct vote ever seen on the live stream. Evicting an id only risks double-counting a vote
+// re-delivered after 20k newer ones, and the next COUNT resync corrects the number anyway. (#6)
+const seen = new Map<string, 1>();
+const SEEN_MAX = 20000;
+const SEEN_EVICT = 5000; // drop in chunks so the eviction stays amortized O(1) per insert
 let hotSeen: Record<string, number> = {}; // per-resync-cycle max 24h count (lets "hot" fall as votes age out)
 let queue: string[] = [];
 let draining = false;
@@ -140,9 +146,19 @@ function onTarget({ id, text }: { id: string; text: string }): void {
   }
 }
 
+function markSeen(id: string): void {
+  seen.set(id, 1);
+  if (seen.size <= SEEN_MAX) return;
+  let n = SEEN_EVICT;
+  for (const k of seen.keys()) {
+    seen.delete(k); // Map keys iterate oldest-first, so this drops the coldest ids
+    if (--n === 0) break;
+  }
+}
+
 function onReaction({ id, target }: { id: string; target?: string }): void {
-  if (seen[id]) return; // our own echo, or the same vote from another relay
-  seen[id] = 1;
+  if (seen.has(id)) return; // our own echo, or the same vote from another relay
+  markSeen(id);
   const t = target ? get(target) : null;
   if (!t) return; // unknown topic: ignore; the next COUNT/resync catches it
   t.confirmed += 1;
@@ -187,7 +203,7 @@ async function drain(): Promise<void> {
       } catch {
         break;
       }
-      seen[ev.id] = 1; // pre-mark so our own echoes (from every relay) are deduped
+      markSeen(ev.id); // pre-mark so our own echoes (from every relay) are deduped
       if (!pool.publish(ev)) break;
       const ok = await pool.waitOk(ev.id, 8000); // resolves only when a relay ACCEPTS; null on timeout
       const t = get(id);

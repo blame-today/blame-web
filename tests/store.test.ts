@@ -161,3 +161,32 @@ describe('persistence', () => {
     expect(m.store.mine).toContain('a');
   });
 });
+
+describe('seen-map eviction (#6)', () => {
+  it('caps the reaction-dedup map so a long-lived tab cannot grow it forever', async () => {
+    await m.blame('Traffic');
+    const t = find('Traffic')!;
+    await vi.waitFor(() => expect(t.confirmed).toBe(1));
+    const on = h.getHandlers().onReaction;
+    const base = t.confirmed;
+
+    // 'old-1' is the coldest id in the map, so it sits in the first chunk evicted once
+    // the cap is passed. Everything after it is newer.
+    on({ id: 'old-1', target: t.id });
+    expect(t.confirmed).toBe(base + 1);
+    on({ id: 'old-1', target: t.id }); // still remembered, so ignored
+    expect(t.confirmed).toBe(base + 1);
+
+    for (let i = 0; i < 20001; i++) on({ id: 'fill-' + i, target: t.id });
+    const afterFill = t.confirmed;
+
+    // Evicted, so it reads as new and counts again. That is the accepted trade: the
+    // alternative is unbounded growth, and the COUNT resync corrects the number anyway.
+    on({ id: 'old-1', target: t.id });
+    expect(t.confirmed).toBe(afterFill + 1);
+
+    // A recent id is still deduped, so the map is capped, not cleared.
+    on({ id: 'fill-20000', target: t.id });
+    expect(t.confirmed).toBe(afterFill + 1);
+  });
+});
