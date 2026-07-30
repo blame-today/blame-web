@@ -28,10 +28,10 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # node 24+ strips TS types, so the audit can import src/lib/filter.ts directly (zero drift
           # from the shipped filter). matches deploy-web.yml's node 24.
