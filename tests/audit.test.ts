@@ -34,4 +34,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-08-08: blocks the flagged vulgar entries', () => {
+    for (const t of ["Epstein","Gwyneth Paltrow"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
