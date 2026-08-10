@@ -39,4 +39,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-08-10: blocks the flagged vulgar entries', () => {
+    for (const t of ["the prompt cache 5-minute TTL","claude"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
