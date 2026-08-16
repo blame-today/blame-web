@@ -44,4 +44,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-08-16: blocks the flagged vulgar entries', () => {
+    for (const t of ["Dua Lipa","swifties"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
