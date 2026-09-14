@@ -64,4 +64,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-09-14: blocks the flagged vulgar entries', () => {
+    for (const t of ["Kamala Harris","UFC"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
