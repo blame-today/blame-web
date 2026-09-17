@@ -231,20 +231,28 @@ async function judgeViaMtok(labels, { env = process.env, importMtok = () => impo
   const chunks = chunksOf(labels, Number(env.MTOK_CHUNK_SIZE || MTOK_CHUNK_SIZE));
   const flagged = new Set();
   for (let i = 0; i < chunks.length; i++) {
-    const model = models[i % models.length];
-    const result = await mtok.buy({
-      model,
-      sellerId: env.MTOK_SELLER_ID || MTOK_SELLER_ID,
-      maxPrice: Number(env.MTOK_MAX_PRICE || MTOK_MAX_PRICE),
-      budget: Number(env.MTOK_CHUNK_BUDGET_USD || env.MTOK_BUDGET_USD || MTOK_CHUNK_BUDGET_USD),
-      requests: [{
+    // Rotate the mix, but a model with no offer under MTOK_MAX_PRICE is skipped for the next
+    // one rather than failing the run: no_offers spends nothing, while throwing here would
+    // discard the chunks already PAID for and pay gemini to redo them (2026-09-17, the
+    // house prices llama-3.3-70b and qwen-coder at $4/M, over the 2.5 cap).
+    let result;
+    for (let k = 0; k < models.length; k++) {
+      const model = models[(i + k) % models.length];
+      result = await mtok.buy({
         model,
-        temperature: 0,
-        max_tokens: 384,
-        response_format: { type: 'json_object' },
-        messages: [{ role: 'user', content: buildJudgePrompt(chunks[i]) }],
-      }],
-    });
+        sellerId: env.MTOK_SELLER_ID || MTOK_SELLER_ID,
+        maxPrice: Number(env.MTOK_MAX_PRICE || MTOK_MAX_PRICE),
+        budget: Number(env.MTOK_CHUNK_BUDGET_USD || env.MTOK_BUDGET_USD || MTOK_CHUNK_BUDGET_USD),
+        requests: [{
+          model,
+          temperature: 0,
+          max_tokens: 384,
+          response_format: { type: 'json_object' },
+          messages: [{ role: 'user', content: buildJudgePrompt(chunks[i]) }],
+        }],
+      });
+      if (result.status !== 'no_offers') break;
+    }
     if (result.status !== 'ok') throw new Error(`mtok buy failed: ${result.status}`);
     const text = result.completions?.[0]?.choices?.[0]?.message?.content;
     for (const label of parseJudgeResponse(text, chunks[i])) flagged.add(label);
