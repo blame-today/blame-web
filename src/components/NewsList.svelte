@@ -1,8 +1,8 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { news, loadNews, nextRefreshAt } from '$lib/news.svelte';
-  import { store, vote, blame } from '$lib/store.svelte';
-  import { fireFloat, bump } from '$lib/fx';
+  import { store, vote, blame, retryFailed } from '$lib/store.svelte';
+  import { fireFloat } from '$lib/fx';
   import type { NewsItem } from '$lib/types';
 
   // Lazy: restore the cache or do the one-time fetch the first time the tab is opened.
@@ -83,11 +83,14 @@
           </div>
         </div>
         <div class="flex items-center space-x-2 shrink-0">
+          {#if topic?.failed}
+            <button onclick={() => retryFailed(topic.id)} class="text-[10px] text-amber-400 underline" aria-label={`retry ${topic.failed} failed votes for ${topic.txt}`}>retry {topic.failed}</button>
+          {/if}
           {#if topic && topic.pending > 0}
             <span transition:fade={{ duration: 150 }} class="text-[10px] font-mono font-bold text-amber-400 animate-pulse" title="votes queued — syncing to relays">↑{topic.pending}</span>
           {/if}
           {#if topic}
-            <span use:bump={topic.confirmed} class="text-xs font-mono font-bold bg-slate-950 border border-slate-800 text-orange-500 px-2.5 py-1 rounded-lg tabular-nums inline-block">{topic.confirmed.toLocaleString()}</span>
+            <span class="text-xs font-mono font-bold bg-slate-950 border border-slate-800 text-orange-500 px-2.5 py-1 rounded-lg tabular-nums inline-block">{topic.confirmed.toLocaleString()}</span>
           {/if}
           <button onclick={(e) => castVote(item, e)} class="bg-slate-800 hover:bg-red-600 active:scale-95 font-black text-xs px-3 py-1 rounded-lg transition">+1</button>
         </div>

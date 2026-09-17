@@ -2,7 +2,7 @@
 // OK / EOSE), reconnection, fan-out publishing, OK-matching, and our two event types.
 // It knows how we speak Nostr; it knows nothing about app state. Parsed domain events go
 // out through the handlers — no raw Nostr shapes leak into the store.
-import { signEvent, nowSec } from './crypto';
+import { signEvent, nowSec, isNostrEvent, verifyEvent } from './crypto';
 import type { NostrEvent, RelayHandlers, RelayPool } from './types';
 
 export { RELAYS, TAG } from './relays';
@@ -61,11 +61,12 @@ type Conn = { ws: WebSocket; loaded: boolean };
 //   onReaction({id,target}) · onCount(targetId, count, recent)
 export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
   const conns: Record<string, Conn> = {};
-  const okWaiters: Record<string, () => void> = {};
+  const okWaiters = new Map<string, () => void>();
   // An entry is normally cleared by the COUNT reply. A relay that doesn't implement NIP-45 (or
   // drops the frame) never replies, so without a sweep resync would leak one entry per counted
   // topic per cycle, forever. Stamp each and drop the unanswered ones. (#6)
-  const countSubs: Record<string, { id: string; recent: boolean; at: number }> = {};
+  const countSubs = new Map<string, { id: string; recent: boolean; at: number; relay: string; key: string }>();
+  const latestCount = new Map<string, string>();
   const COUNT_SUB_TTL = 60000; // a relay that's going to answer does so well inside a resync cycle
   let lastSweep = 0;
   let countN = 0;
@@ -86,7 +87,11 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
       ws.send(JSON.stringify(['REQ', 'tg', { kinds: [1], '#t': [TAG], limit: 1000 }])); // topic list
       emitStatus();
     };
-    ws.onmessage = (m) => onFrame(url, m);
+    // Verification is asynchronous; keep EOSE behind the events it terminates.
+    let frames = Promise.resolve();
+    ws.onmessage = (m) => {
+      frames = frames.then(() => conns[url]?.ws === ws ? onFrame(url, m) : undefined).catch(error => console.warn('relay message failed', error));
+    };
     ws.onclose = () => {
       if (conns[url]) conns[url].loaded = false;
       emitStatus();
@@ -95,13 +100,15 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
     ws.onerror = () => {};
   }
 
-  function onFrame(url: string, m: MessageEvent): void {
+  async function onFrame(url: string, m: MessageEvent): Promise<void> {
+    if (typeof m.data !== 'string' || m.data.length > 131072) return;
     let p: any;
     try {
       p = JSON.parse(m.data);
     } catch {
       return;
     }
+    if (!Array.isArray(p) || typeof p[1] !== 'string') return;
     switch (p[0]) {
       case 'EOSE': // initial topic list for this relay is in
         if (p[1] === 'tg' && conns[url] && !conns[url].loaded) {
@@ -111,19 +118,29 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
         }
         return;
       case 'COUNT': {
-        const meta = countSubs[p[1]];
-        delete countSubs[p[1]];
-        if (meta) handlers.onCount?.(meta.id, p[2] && p[2].count, meta.recent);
+        const meta = countSubs.get(p[1]);
+        if (!meta || meta.relay !== url) return;
+        countSubs.delete(p[1]);
+        if (latestCount.get(meta.key) !== p[1]) return;
+        latestCount.delete(meta.key);
+        const count = p[2]?.count;
+        if (Number.isSafeInteger(count) && count >= 0) handlers.onCount?.(meta.id, count, meta.recent, url);
         return;
       }
       case 'OK': // first relay to accept resolves the waiter; rejections handled by retry
-        if (p[2] === true) okWaiters[p[1]]?.();
+        if (p[2] === true) okWaiters.get(p[1])?.();
         return;
       case 'EVENT': {
         const e = p[2];
-        if (!e) return;
-        if (e.kind === 1) handlers.onTarget?.({ id: e.id, text: e.content || '' });
-        else if (e.kind === 7) handlers.onReaction?.({ id: e.id, target: (e.tags.find((t: string[]) => t[0] === 'e') || [])[1] });
+        if (!['tg', 'lv'].includes(p[1]) || !isNostrEvent(e)) return;
+        if (!e.tags.some(tag => tag[0] === 't' && tag[1] === TAG)) return;
+        if (e.created_at > nowSec() + 60 || ![1, 7].includes(e.kind)) return;
+        if (p[1] === 'tg' && e.kind !== 1) return;
+        const target = e.tags.filter(tag => tag[0] === 'e').at(-1)?.[1];
+        if (e.kind === 7 && (e.content !== '💥' || !target || !/^[a-f0-9]{64}$/.test(target))) return;
+        if (!await verifyEvent(e)) return;
+        if (e.kind === 1) handlers.onTarget?.({ id: e.id, text: e.content });
+        else handlers.onReaction?.({ id: e.id, target });
         return;
       }
     }
@@ -139,15 +156,20 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
     handlers.onStatus?.(up, loaded);
   }
 
-  function sendCount(ws: WebSocket, targetId: string, since?: number): void {
+  function sendCount(url: string, ws: WebSocket, targetId: string, since?: number): void {
     const now = Date.now();
     if (now - lastSweep > COUNT_SUB_TTL) {
       lastSweep = now; // throttled: sendCount fires hundreds of times per resync, the sweep once
-      for (const s in countSubs) if (now - countSubs[s].at > COUNT_SUB_TTL) delete countSubs[s];
+      for (const [sub, meta] of countSubs) if (now - meta.at > COUNT_SUB_TTL) {
+        countSubs.delete(sub);
+        if (latestCount.get(meta.key) === sub) latestCount.delete(meta.key);
+      }
     }
     const sub = 'c' + ++countN;
-    countSubs[sub] = { id: targetId, recent: since !== undefined, at: now };
-    const filter: Record<string, unknown> = { kinds: [7], '#e': [targetId] };
+    const key = `${url}:${targetId}:${since !== undefined}`;
+    latestCount.set(key, sub);
+    countSubs.set(sub, { id: targetId, recent: since !== undefined, at: now, relay: url, key });
+    const filter: Record<string, unknown> = { kinds: [7], '#e': [targetId], '#t': [TAG] };
     if (since !== undefined) filter.since = since; // windowed count (e.g. last 24h) for "hot"
     ws.send(JSON.stringify(['COUNT', sub, filter])); // count votes, don't fetch them
   }
@@ -166,10 +188,10 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
     // Pass `since` (unix seconds) for a windowed count (e.g. last 24h); omit for all-time.
     countOn(url, ids, since) {
       const c = conns[url];
-      if (isOpen(c)) for (const id of ids) sendCount(c.ws, id, since);
+      if (isOpen(c)) for (const id of ids) sendCount(url, c.ws, id, since);
     },
     countAll(ids, since) {
-      for (const url in conns) if (isOpen(conns[url])) for (const id of ids) sendCount(conns[url].ws, id, since);
+      for (const url in conns) if (isOpen(conns[url])) for (const id of ids) sendCount(url, conns[url].ws, id, since);
     },
 
     // Fan a signed event out to every open relay; returns how many got it.
@@ -194,11 +216,13 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
         const fin = (v: true | null) => {
           if (done) return;
           done = true;
-          delete okWaiters[id];
+          clearTimeout(timer);
+          if (okWaiters.get(id) === accept) okWaiters.delete(id);
           res(v);
         };
-        okWaiters[id] = () => fin(true);
-        setTimeout(() => fin(null), ms);
+        const accept = () => fin(true);
+        const timer = setTimeout(() => fin(null), ms);
+        okWaiters.set(id, accept);
       });
     },
 

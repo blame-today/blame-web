@@ -3,7 +3,9 @@
 
   // One dot per relay (green = connected), plus a word for the state — no "5/5" that reads as a date.
   const tone = $derived(
-    store.relaysUp === 0
+    store.connecting
+      ? { label: 'connecting', text: 'text-amber-400', dot: 'bg-amber-500' }
+      : store.relaysUp === 0
       ? { label: 'offline', text: 'text-red-400', dot: 'bg-red-500' }
       : !store.synced
         ? { label: 'syncing', text: 'text-amber-400', dot: 'bg-amber-500 animate-pulse' }

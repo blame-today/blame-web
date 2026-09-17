@@ -7,7 +7,7 @@ const mock = vi.hoisted(() => ({
   store: { topics: [] as any[], mine: [] as string[], relaysUp: 5, relaysTotal: 5, synced: true },
   vote: vi.fn(),
 }));
-vi.mock('$lib/store.svelte', () => ({ store: mock.store, vote: mock.vote, blame: vi.fn(), TOP: 100 }));
+vi.mock('$lib/store.svelte', () => ({ store: mock.store, vote: mock.vote, retryFailed: vi.fn(), blame: vi.fn(), TOP: 100 }));
 
 import Blameboard from '$components/Blameboard.svelte';
 

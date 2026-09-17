@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-// Mock every relay WebSocket so flows are deterministic and never touch live Nostr:
-//   REQ  -> EOSE (no stored topics)        COUNT -> 0        EVENT -> OK true (accepted)
+// Relays share an event-id index: replaying an accepted event is idempotent.
+let posted: Map<string, any>;
 test.beforeEach(async ({ page }) => {
+  posted = new Map();
   await page.routeWebSocket(/.*/, (ws) => {
     ws.onMessage((message) => {
       let p: any;
@@ -12,8 +13,14 @@ test.beforeEach(async ({ page }) => {
         return;
       }
       if (p[0] === 'REQ') ws.send(JSON.stringify(['EOSE', p[1]]));
-      else if (p[0] === 'COUNT') ws.send(JSON.stringify(['COUNT', p[1], { count: 0 }]));
-      else if (p[0] === 'EVENT') ws.send(JSON.stringify(['OK', p[1].id, true, '']));
+      else if (p[0] === 'COUNT') {
+        const f = p[2];
+        const count = [...posted.values()].filter(e => e.kind === 7 && e.tags.some((t: string[]) => t[0] === 'e' && f['#e'].includes(t[1])) && (!f.since || e.created_at >= f.since)).length;
+        ws.send(JSON.stringify(['COUNT', p[1], { count }]));
+      } else if (p[0] === 'EVENT') {
+        posted.set(p[1].id, p[1]);
+        ws.send(JSON.stringify(['OK', p[1].id, true, '']));
+      }
     });
   });
   await page.goto('/');
@@ -55,7 +62,21 @@ test('rejects profanity with a fiery placeholder and does not post', async ({ pa
   await expect(input).toHaveJSProperty('placeholder', '🔥 No bad words! 🔥');
   await expect(input).toHaveValue('');
   // nothing was posted to the relays
-  await expect(page.getByText('No blame yet. Be the first to point a finger.')).toBeVisible();
+  await expect(page.getByText('Nothing hot in the last 24h — go start something.')).toBeVisible();
+  expect([...posted.values()].filter(e => e.tags.some((tag: string[]) => tag[0] === 't' && tag[1] === 'pureblameapp'))).toHaveLength(0);
+});
+
+test('narrow screens fit the board and reduced motion suppresses vote effects', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByPlaceholder('Type target to blame...').fill('Slow Wifi');
+  await page.getByRole('button', { name: 'Blame', exact: true }).click();
+  const row = page.locator('.divide-y > div').filter({ hasText: 'Slow Wifi' });
+  await expect(row.locator('.tabular-nums')).toHaveText('1');
+  await row.getByRole('button', { name: '+1' }).click();
+  await expect(row.locator('.tabular-nums')).toHaveText('2');
+  await expect(page.locator('body > span')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('filters switch between All and Mine', async ({ page }) => {

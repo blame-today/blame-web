@@ -1,4 +1,4 @@
-// jsdom lacks the Web Animations API; stub it so fx (fireFloat / bump / burnAway) is a no-op
+// jsdom lacks the Web Animations API; stub it so vote/rejection effects are a no-op
 // in component tests instead of throwing. (Skipped in the node test environment.)
 if (typeof Element !== 'undefined') {
   if (!('animate' in Element.prototype)) {

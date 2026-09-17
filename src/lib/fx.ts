@@ -1,8 +1,8 @@
-import type { Action } from 'svelte/action';
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // A little 🔥 floating up from an element when a vote spins up.
 export function fireFloat(anchor: HTMLElement | null): void {
-  if (!anchor) return;
+  if (!anchor || reducedMotion()) return;
   const r = anchor.getBoundingClientRect();
   const s = document.createElement('span');
   s.textContent = '🔥';
@@ -21,7 +21,7 @@ export function fireFloat(anchor: HTMLElement | null): void {
 
 // Rejected input text floating up in flames.
 export function burnAway(anchor: HTMLElement | null, text: string): void {
-  if (!anchor || !text) return;
+  if (!anchor || !text || reducedMotion()) return;
   const r = anchor.getBoundingClientRect();
   const s = document.createElement('span');
   s.textContent = text;
@@ -35,19 +35,3 @@ export function burnAway(anchor: HTMLElement | null, text: string): void {
     { duration: 900, easing: 'ease-in' },
   ).onfinish = () => s.remove();
 }
-
-// Svelte action: pop a number when its bound value increases.
-export const bump: Action<HTMLElement, number> = (node, value) => {
-  let prev = value;
-  return {
-    update(v: number) {
-      if (v > prev) {
-        node.animate(
-          [{ transform: 'scale(1)' }, { transform: 'scale(1.4)', color: '#fff' }, { transform: 'scale(1)' }],
-          { duration: 260, easing: 'ease-out' },
-        );
-      }
-      prev = v;
-    },
-  };
-};

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { vote } from '$lib/store.svelte';
+  import { vote, retryFailed } from '$lib/store.svelte';
   import { ui } from '$lib/ui.svelte';
-  import { fireFloat, bump } from '$lib/fx';
+  import { fireFloat } from '$lib/fx';
   import Sticker from '$components/Sticker.svelte';
   import type { RowTopic } from '$lib/types';
 
@@ -27,10 +27,13 @@
     <span class="font-bold text-slate-200 truncate select-text cursor-text min-w-0">{topic.txt}</span>
   </div>
   <div class="flex items-center space-x-2 shrink-0">
+    {#if topic.failed}
+      <button onclick={() => retryFailed(topic.id)} class="text-[10px] text-amber-400 underline" aria-label={`retry ${topic.failed} failed votes for ${topic.txt}`}>retry {topic.failed}</button>
+    {/if}
     {#if topic.pending > 0}
       <span transition:fade={{ duration: 150 }} class="text-[10px] font-mono font-bold text-amber-400 animate-pulse" title="votes queued — syncing to relays">↑{topic.pending}</span>
     {/if}
-    <span use:bump={topic.count} class="text-xs font-mono font-bold bg-slate-950 border border-slate-800 text-orange-500 px-2.5 py-1 rounded-lg tabular-nums inline-block">{topic.count.toLocaleString()}</span>
+    <span class="text-xs font-mono font-bold bg-slate-950 border border-slate-800 text-orange-500 px-2.5 py-1 rounded-lg tabular-nums inline-block">{topic.count.toLocaleString()}</span>
     <button onclick={(e) => { vote(topic.id); fireFloat(e.currentTarget); }} class="bg-slate-800 hover:bg-red-600 active:scale-95 font-black text-xs px-3 py-1 rounded-lg transition touch-manipulation">+1</button>
   </div>
 </div>
