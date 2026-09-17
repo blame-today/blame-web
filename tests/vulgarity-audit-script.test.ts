@@ -77,6 +77,53 @@ describe('vulgarity audit mtok judge', () => {
     ]);
   });
 
+  it('skips a model with no offer under the price cap instead of discarding paid chunks', async () => {
+    const buys: { model: string }[] = [];
+    const fakeMtok = {
+      create: async () => ({
+        identity: { address: HOUSE },
+        async buy(opts: { model: string }) {
+          buys.push(opts);
+          if (!opts.model.includes('mistral')) return { status: 'no_offers', model: opts.model, maxPrice: 2.5 };
+          return { status: 'ok', completions: [{ choices: [{ message: { content: '{"vulgar":[0]}' } }] }] };
+        },
+      }),
+    };
+
+    const got = await judge(['Boom Boom', 'Donkey Boy'], {
+      env: { MTOK_EVM_PRIVATE_KEY: '0x' + '1'.repeat(64), MTOK_CHUNK_SIZE: '1' },
+      importMtok: async () => ({ Mtok: fakeMtok }),
+    });
+
+    expect(got).toEqual(['Boom Boom', 'Donkey Boy']);
+    expect(buys.map((b) => b.model.split('/').pop())).toEqual([
+      'mistral-small-3.1-24b-instruct',
+      'llama-3.3-70b-instruct-fp8-fast', 'qwen2.5-coder-32b-instruct', 'mistral-small-3.1-24b-instruct',
+    ]);
+  });
+
+  it('still fails the mtok path when no model in the mix has an offer', async () => {
+    const fakeMtok = {
+      create: async () => ({
+        identity: { address: HOUSE },
+        async buy(opts: { model: string }) { return { status: 'no_offers', model: opts.model }; },
+      }),
+    };
+    const logged: string[] = [];
+    const err = console.error;
+    console.error = (m: string) => { logged.push(String(m)); };
+    try {
+      // no GEMINI_API_KEY, so the fallback itself fails: what matters is that mtok gave up with no_offers
+      await judge(['Boom Boom'], {
+        env: { MTOK_EVM_PRIVATE_KEY: '0x' + '1'.repeat(64) },
+        importMtok: async () => ({ Mtok: fakeMtok }),
+      }).catch(() => {});
+    } finally {
+      console.error = err;
+    }
+    expect(logged.some((m) => m.includes('mtok buy failed: no_offers'))).toBe(true);
+  });
+
   it('refuses to spend unless the buyer key derives the house seller wallet', async () => {
     const fakeMtok = {
       create: async () => ({
