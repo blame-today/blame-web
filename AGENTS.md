@@ -34,8 +34,7 @@ npm test           # vitest (filter, store, crypto, the worker /mcp + routing, c
 npm run test:e2e   # playwright
 npm run build      # vite -> dist/
 ```
-CI runs `npm test` before `build`, so a red test can't ship (it sat red for a week once because
-nothing ran them).
+CI runs this full gate on pull requests and before deploying main.
 
 ### Conventions
 - **Every commit references a GitHub issue**, e.g. `feat: add the explainer (refs #12)`.

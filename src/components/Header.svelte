@@ -16,7 +16,7 @@
       <span class="text-slate-600">·</span>
       <a href="https://github.com/nostr-protocol/nips" target="_blank" rel="noopener noreferrer" title="The NIPs — Nostr's open specs" class="transition-colors hover:text-orange-400 hover:underline">open</a>
       <span class="text-slate-600">·</span>
-      <a href="https://github.com/nostr-protocol/nips/blob/master/01.md" target="_blank" rel="noopener noreferrer" title="NIP-01: every vote is a Schnorr-signed event" class="transition-colors hover:text-orange-400 hover:underline">tamperproof</a>
+      <a href="https://github.com/nostr-protocol/nips/blob/master/01.md" target="_blank" rel="noopener noreferrer" title="NIP-01: events are signed and verified; relay counts are estimates" class="transition-colors hover:text-orange-400 hover:underline">signed</a>
       <span class="text-slate-600">·</span>
       <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" title="What is Nostr?" class="transition-colors hover:text-orange-400 hover:underline">nostr</a>
       <span class="text-slate-600">·</span>

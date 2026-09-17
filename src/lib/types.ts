@@ -8,6 +8,7 @@ export type Topic = {
   confirmed: number;
   hot: number;
   pending: number;
+  failed?: number;
 };
 
 // What a Row renders — a topic projected for a given view. `count` is the metric for the active
@@ -26,6 +27,7 @@ export type RowTopic = {
   id: string;
   txt: string;
   pending: number;
+  failed?: number;
   count: number;
   rank?: number;
   mine?: boolean;
@@ -48,7 +50,7 @@ export type RelayHandlers = {
   onRelayReady?: (url: string) => void;
   onTarget?: (target: { id: string; text: string }) => void;
   onReaction?: (reaction: { id: string; target?: string }) => void;
-  onCount?: (targetId: string, count: number, recent: boolean) => void;
+  onCount?: (targetId: string, count: number, recent: boolean, relay?: string) => void;
 };
 
 // The command surface the store drives the relay layer through.

@@ -187,7 +187,7 @@ export async function loadNews(force = false): Promise<void> {
     const failures: string[] = [];
     for (const src of SOURCES) {
       try {
-        const res = await fetch(src.feed);
+        const res = await fetch(src.feed, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) {
           failures.push(`${src.name}: HTTP ${res.status}`);
           continue;

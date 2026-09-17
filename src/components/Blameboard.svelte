@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { flip } from 'svelte/animate';
   import { store, TOP } from '$lib/store.svelte';
   import { ui } from '$lib/ui.svelte';
   import Row from '$components/Row.svelte';
@@ -37,7 +36,9 @@
 
   const sub = $derived(ui.filter === 'mine' ? 'yours' : ui.filter === 'news' ? 'in the news' : 'top 100');
   const emptyMsg = $derived(
-    ui.filter === '24h'
+    !store.synced
+      ? store.connecting || store.relaysUp > 0 ? 'Loading the board from relays…' : 'Offline. The board will load when a relay reconnects.'
+      : ui.filter === '24h'
       ? 'Nothing hot in the last 24h — go start something.'
       : ui.filter === 'mine'
         ? "You haven't blamed anything yet — type one above."
@@ -53,6 +54,7 @@
     <div class="flex gap-0.5 shrink-0">
       {#each FILTERS as f (f.key)}
         <button
+          aria-pressed={ui.filter === f.key}
           onclick={() => (ui.filter = f.key)}
           class:chip-flash={f.key === 'mine' && ui.blazeId !== ''}
           class="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors touch-manipulation {ui.filter === f.key ? 'bg-orange-600 text-white' : 'text-slate-500 hover:text-slate-300'}"
@@ -66,16 +68,17 @@
     <!-- spam-click instruction, top line of the board (moved off the composer
          so it doesn't stack under the input on narrow screens) -->
     <div class="p-3 px-4 border-b border-slate-800/60">
-      <p class="text-[clamp(9px,2.6vw,10px)] whitespace-nowrap text-slate-500">Click freely. Votes queue, then sync. <span class="text-amber-500/70">↑n</span> = in flight.</p>
+      <p class="text-[10px] text-slate-400">Click freely. <span class="text-amber-500/70">↑n</span> = queued. Keep this tab open until votes sync.</p>
+      <p class="mt-1 text-[10px] text-slate-500">Counts are relay estimates, refreshed after votes and every 45 seconds.</p>
     </div>
     <div class="divide-y divide-slate-800/60 [&>div:last-child>div]:rounded-b-2xl">
       {#each visible as t (t.id)}
-        <div animate:flip={{ duration: 340 }}>
+        <div>
           <Row topic={t} />
         </div>
       {/each}
       {#if visible.length === 0}
-        <div class="p-8 text-center text-xs text-slate-600">{emptyMsg}</div>
+        <div role="status" class="p-8 text-center text-xs text-slate-400">{emptyMsg}</div>
       {/if}
     </div>
   {/if}

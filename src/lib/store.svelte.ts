@@ -24,25 +24,29 @@ export const store = $state<{
   relaysUp: number;
   relaysTotal: number;
   synced: boolean;
+  connecting: boolean;
 }>({
   topics: [],
   mine: [],
   relaysUp: 0,
   relaysTotal: 0,
   synced: false,
+  connecting: true,
 });
 
 const byId = new Map<string, number>(); // id -> index into store.topics (stable; never reordered)
 const idxByText = new Map<string, string>(); // normalized text -> id (dedup blames by text)
-// reactionId -> 1 (dedup our echoes + the same vote from N relays). A Map, not a Record, because we
-// need insertion order to evict: a tab left open for days would otherwise grow this forever, one key
-// per distinct vote ever seen on the live stream. Evicting an id only risks double-counting a vote
-// re-delivered after 20k newer ones, and the next COUNT resync corrects the number anyway. (#6)
+// Dedup relay echoes before requesting a recount. Live events never add to a COUNT snapshot.
 const seen = new Map<string, 1>();
 const SEEN_MAX = 20000;
 const SEEN_EVICT = 5000; // drop in chunks so the eviction stays amortized O(1) per insert
-let hotSeen: Record<string, number> = {}; // per-resync-cycle max 24h count (lets "hot" fall as votes age out)
-let queue: string[] = [];
+const snapshots = new Map<string, Map<string, { count: number; at: number }>>();
+type Delivery = { id: string; event?: NostrEvent; failures: number };
+let queue: Delivery[] = [];
+let failed: Delivery[] = [];
+const unpublished = new Map<string, NostrEvent>();
+const recount = new Set<string>();
+let recountTimer: ReturnType<typeof setTimeout> | undefined;
 let draining = false;
 let backoff = 0;
 let started = false;
@@ -83,6 +87,7 @@ export function init(): void {
     }
   } catch {}
   pool.connect();
+  setTimeout(() => { store.connecting = false; }, 8000);
 }
 
 export function vote(id: string): void {
@@ -93,7 +98,7 @@ export function vote(id: string): void {
     store.mine.push(id); // remember it's yours
     schedulePersist();
   }
-  queue.push(id);
+  queue.push({ id, failures: 0 });
   drain();
 }
 
@@ -111,15 +116,25 @@ export async function blame(txt: string): Promise<string | undefined> {
     console.error('blame failed:', e);
     return undefined;
   }
-  pool.publish(ev);
+  unpublished.set(ev.id, ev);
   addTopic(ev.id, clip(txt), 0);
   vote(ev.id); // creator's opening blame
   return ev.id;
 }
 
+export function retryFailed(id: string): void {
+  const retry = failed.filter(entry => entry.id === id);
+  failed = failed.filter(entry => entry.id !== id);
+  for (const entry of retry) { entry.failures = 0; queue.push(entry); }
+  const t = get(id);
+  if (t) { t.pending += retry.length; t.failed = 0; }
+  void drain();
+}
+
 // ---- Relay events -> state ----
 function onStatus(up: number, loaded: number): void {
   store.relaysUp = up;
+  if (up > 0) store.connecting = false;
   store.synced = loaded > 0;
   if (up > 0) drain(); // a relay just came up — resume any queued votes
 }
@@ -161,27 +176,36 @@ function onReaction({ id, target }: { id: string; target?: string }): void {
   markSeen(id);
   const t = target ? get(target) : null;
   if (!t) return; // unknown topic: ignore; the next COUNT/resync catches it
-  t.confirmed += 1;
-  t.hot += 1; // a live vote is, by definition, within the last 24h
-  schedulePersist();
+  requestCounts(t.id);
 }
 
-// confirmed is all-time (monotonic max-merge). hot is the 24h window — non-monotonic, so we
-// take the max across relays *within a resync cycle* (hotSeen) and let it fall each new cycle.
-function onCount(targetId: string, count: number, recent: boolean): void {
+// NIP-45 gives relay estimates, not event IDs. Use their maximum; never add live events to it.
+// A fresh snapshot can correct a cached total downward. Expire disconnected relay estimates.
+function onCount(targetId: string, count: number, recent: boolean, relay = 'relay'): void {
   const t = get(targetId);
-  if (!t || typeof count !== 'number') return;
-  if (recent) {
-    hotSeen[targetId] = Math.max(hotSeen[targetId] || 0, count);
-    t.hot = hotSeen[targetId];
-  } else if (count > t.confirmed) {
-    t.confirmed = count;
-    schedulePersist();
-  }
+  if (!t || !Number.isSafeInteger(count) || count < 0) return;
+  const key = `${targetId}:${recent}`;
+  const values = snapshots.get(key) ?? new Map();
+  values.set(relay, { count, at: Date.now() });
+  for (const [url, sample] of values) if (Date.now() - sample.at > RESYNC_MS * 2) values.delete(url);
+  snapshots.set(key, values);
+  t[recent ? 'hot' : 'confirmed'] = Math.max(...Array.from(values.values(), sample => sample.count));
+  if (!recent) schedulePersist();
+}
+
+function requestCounts(id: string): void {
+  recount.add(id);
+  if (recountTimer) return;
+  recountTimer = setTimeout(() => {
+    const ids = [...recount];
+    recount.clear();
+    recountTimer = undefined;
+    pool.countAll(ids);
+    pool.countAll(ids, dayAgo());
+  }, 250);
 }
 
 function resync(): void {
-  hotSeen = {}; // new cycle — let hot counts re-settle (and fall as votes age past 24h)
   const topConfirmed = [...store.topics].sort((a, b) => b.confirmed - a.confirmed).slice(0, RESYNC_TOP).map((t) => t.id);
   const topHot = [...store.topics].sort((a, b) => b.hot - a.hot).slice(0, RESYNC_TOP).map((t) => t.id);
   pool.countAll(topConfirmed); // refresh all-time for the leaderboard
@@ -192,40 +216,38 @@ function resync(): void {
 async function drain(): Promise<void> {
   if (draining) return;
   draining = true;
-  let failures = 0; // consecutive rejections on the current queue head (#4)
   try {
     while (queue.length) {
       if (!pool.anyOpen()) break;
-      const id = queue[0];
+      const entry = queue[0];
+      const id = entry.id;
+      const target = unpublished.get(id);
       let ev: NostrEvent;
       try {
-        ev = await signVote(id);
+        ev = target ?? (entry.event ??= await signVote(id));
       } catch {
-        break;
+        failDelivery(entry);
+        continue;
       }
       markSeen(ev.id); // pre-mark so our own echoes (from every relay) are deduped
+      const accepted = pool.waitOk(ev.id, 8000);
       if (!pool.publish(ev)) break;
-      const ok = await pool.waitOk(ev.id, 8000); // resolves only when a relay ACCEPTS; null on timeout
+      const ok = await accepted;
       const t = get(id);
       if (ok === true) {
+        entry.failures = 0;
+        backoff = 0;
+        if (target) { unpublished.delete(id); continue; }
         queue.shift();
-        failures = 0;
         if (t) {
-          t.confirmed += 1;
-          t.hot += 1;
           t.pending = Math.max(0, t.pending - 1);
         }
+        requestCounts(id);
         schedulePersist();
-        backoff = 0;
         await sleep(120);
-      } else if (++failures >= MAX_VOTE_ATTEMPTS) {
-        // Give up so a never-accepted vote can't block the whole queue (#4):
-        // drop the head, clear its pending badge, reset, and move on.
-        queue.shift();
-        failures = 0;
+      } else if (++entry.failures >= MAX_VOTE_ATTEMPTS) {
+        failDelivery(entry);
         backoff = 0;
-        if (t) t.pending = Math.max(0, t.pending - 1);
-        console.warn('vote dropped after', MAX_VOTE_ATTEMPTS, 'failed attempts:', id);
       } else {
         backoff = backoff ? Math.min(backoff * 2, 8000) : 800;
         await sleep(backoff);
@@ -234,6 +256,13 @@ async function drain(): Promise<void> {
   } finally {
     draining = false;
   }
+}
+
+function failDelivery(entry: Delivery): void {
+  queue.shift();
+  failed.push(entry);
+  const t = get(entry.id);
+  if (t) { t.pending = Math.max(0, t.pending - 1); t.failed = (t.failed ?? 0) + 1; }
 }
 
 // ---- Persistence (topic text + all-time counts + your voted ids, for instant cold boot) ----

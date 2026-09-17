@@ -15,6 +15,19 @@ Split out of `blame-today/blame-mobile` (the old iOS app + worker repo) so each 
 
 ## dev
 
+Votes are signed once per click and retried with the same event id. A new target must
+be acknowledged before its opening vote is sent. After five failed attempts the
+board offers a retry with that same signed event. Queued and failed deliveries live
+only in the current tab; keep it open until pending votes finish.
+
+Counts are relay estimates: the maximum recent snapshot reported by the relays for
+each target and window. A live event or acknowledgement requests a new snapshot; it
+never adds to the snapshot, so overlapping delivery cannot count twice. A relay can
+correct its estimate downward, and samples older than 90 seconds are removed when
+a fresh count arrives. This is not an exact union across relays. NIP-45 filters the
+application tag and event kind but cannot filter reaction content. Incoming board
+events are separately checked for shape, application tag, canonical id and signature.
+
 ```
 npm install
 npm run dev      # vite dev server
