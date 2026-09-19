@@ -23,6 +23,7 @@ import { mkdtempSync, writeFileSync, readFileSync, appendFileSync, existsSync, r
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { RELAYS, TAG, corroboratedCount } from '../src/lib/relays.ts';
 
 let ROOT = process.cwd();
 try {
@@ -52,8 +53,6 @@ const MTOK_CHUNK_SIZE = Number(process.env.MTOK_CHUNK_SIZE || 60);
 const MTOK_CHUNK_BUDGET_USD = Number(process.env.MTOK_CHUNK_BUDGET_USD || process.env.MTOK_BUDGET_USD || 0.006);
 const MTOK_EXPECTED_WALLET = (process.env.MTOK_EXPECTED_WALLET || '0x3c1F928B7e685c84661A4296E2333FeDB9e1d06e').toLowerCase();
 
-const RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.snort.social', 'wss://nostr.mom', 'wss://relay.nostr.net'];
-const TAG = 'pureblameapp';
 const WAIT_MS = 8000;
 const TODAY = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD (local); good enough for a label
 
@@ -93,19 +92,22 @@ async function fetchTargets() {
   return [...targets].filter(([, label]) => label).map(([id, label]) => ({ id, label }));
 }
 
-async function countVotes(targets) {
-  const counts = new Map(); // id -> max count across relays
+export async function countVotes(targets) {
+  const counts = new Map(); // id -> one report per configured relay
   const subToId = new Map();
   await Promise.all(RELAYS.map((url) => withRelay(url,
-    (ws) => targets.forEach((t, i) => { const sub = 'c' + i; subToId.set(sub, t.id); ws.send(JSON.stringify(['COUNT', sub, { kinds: [7], '#e': [t.id] }])); }),
+    (ws) => targets.forEach((t, i) => { const sub = 'c' + i; subToId.set(sub, t.id); ws.send(JSON.stringify(['COUNT', sub, { kinds: [7], '#e': [t.id], '#t': [TAG] }])); }),
     (p) => {
       if (p[0] === 'COUNT' && subToId.has(p[1])) {
         const id = subToId.get(p[1]);
-        const n = Number(p[2]?.count || 0);
-        if (n > (counts.get(id) || 0)) counts.set(id, n);
+        const n = p[2]?.count;
+        if (!Number.isSafeInteger(n) || n < 0) return;
+        const samples = counts.get(id) ?? new Map();
+        samples.set(url, n);
+        counts.set(id, samples);
       }
     })));
-  return counts;
+  return new Map([...counts].map(([id, samples]) => [id, corroboratedCount(samples)]));
 }
 
 // --- filter eval (fresh process, before + after patch) --------------------------------------------
@@ -355,6 +357,7 @@ async function main() {
   const counts = await countVotes(all);
   const topN = all
     .map((t) => ({ ...t, votes: counts.get(t.id) || 0 }))
+    .filter(t => t.votes > 0)
     .sort((a, b) => b.votes - a.votes)
     .slice(0, TOP_N);
   console.log(`vulgarity-audit: top ${topN.length} by votes (max ${topN[0]?.votes ?? 0}).`);

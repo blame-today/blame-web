@@ -32,7 +32,7 @@
       .sort((a, b) => {
         const aStarts = a.txt.toLowerCase().startsWith(q) ? 0 : 1;
         const bStarts = b.txt.toLowerCase().startsWith(q) ? 0 : 1;
-        return aStarts - bStarts || b.confirmed - a.confirmed;
+        return aStarts - bStarts || (b.confirmed ?? 0) - (a.confirmed ?? 0);
       })
       .slice(0, 6);
   });
@@ -115,7 +115,7 @@
             class="w-full flex justify-between items-center gap-2 px-4 py-2 text-left hover:bg-slate-800/70 transition-colors"
           >
             <span class="truncate text-sm text-slate-200">{s.txt}</span>
-            <span class="shrink-0 text-xs font-mono font-bold text-orange-500 tabular-nums">{s.confirmed.toLocaleString()}</span>
+            <span title={s.confirmed === null ? 'waiting for counts from two relays' : 'relay estimate'} class="shrink-0 text-xs font-mono font-bold text-orange-500 tabular-nums">{s.confirmed?.toLocaleString() ?? '…'}</span>
           </button>
         {/each}
       </div>

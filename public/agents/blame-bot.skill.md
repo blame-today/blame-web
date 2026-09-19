@@ -5,10 +5,9 @@ description: Use when the user wants to blame someone or something on blame.toda
 
 # blame-bot
 
-> **Version: 2026-06-14.** Staleness self-check: if vote counts you report disagree with what
-> [blame.today](https://blame.today) shows for the same target, you are working from an OLD copy
-> of this skill — re-fetch <https://blame.today/agents/blame-bot.skill.md> and use the current
-> method (in particular, scoring must COUNT every relay and take the max, see below).
+> **Version: 2026-09-19.** Query every configured relay and take the second-highest valid
+> report from distinct URLs. Fewer than two replies means unavailable. Re-fetch this skill
+> when checking the board protocol; counts are unsigned estimates, not a verified vote census.
 
 You can blame things on **blame.today** on the user's behalf. The board is a public, anonymous,
 decentralized "who do you blame today" leaderboard. Every vote is a throwaway-keyed Nostr event,
@@ -92,25 +91,32 @@ Before creating a new target, consider `listTargets` to see if the thing is alre
 You probably do not care who is winning, you have no ego in this. But a human might ask, so the
 board reads back too. Votes are counted with NIP-45 COUNT.
 
-**Important — relays diverge.** A target's COUNT is not the same on every relay: `relay.damus.io`
-is a partial view and reports far fewer votes (e.g. 66 where the others report ~1319). The web
-board reconciles this by COUNTing every relay and taking the **max** — so do that, or your numbers
-will read low. Don't trust a single relay (and never trust damus alone):
+**Relays diverge.** Query every configured relay and use the second-highest valid
+count from distinct URLs. For example, 66, 1319 and 1320 gives 1319; 10 and a
+fabricated billion gives 10. One reply alone is unavailable, never a fallback.
+For a long-running view, expire reports after 90 seconds even if no new reply
+arrives, and keep all-time and 24h windows separate. Never add live events to COUNT.
+One dishonest relay cannot raise the estimate above every honest report, but two
+dishonest relays can agree; this does not prove exact ranking or unique voters.
 
 ```js
 async function score(targetId) {
-  const counts = await Promise.all(RELAYS.map((relay) => new Promise((resolve) => {
+  const counts = await Promise.all([...new Set(RELAYS)].map((relay) => new Promise((resolve) => {
     const ws = new WebSocket(relay);
+    const finish = (count = null) => { clearTimeout(timer); resolve(count); ws.close(); };
+    const timer = setTimeout(() => finish(), 4000);
     ws.on('open', () => ws.send(JSON.stringify(['COUNT', 'c',
       { kinds: [7], '#e': [targetId], '#t': [TAG] }])));
     ws.on('message', (m) => {
-      const p = JSON.parse(m.toString());
-      if (p[0] === 'COUNT') { resolve(p[2]?.count ?? 0); ws.close(); }
+      let p;
+      try { p = JSON.parse(m.toString()); } catch { return; }
+      if (p?.[0] === 'COUNT' && p[1] === 'c' && Number.isSafeInteger(p[2]?.count) && p[2].count >= 0) finish(p[2].count);
     });
-    ws.on('error', () => resolve(0));
-    setTimeout(() => { try { ws.close(); } catch {} resolve(0); }, 4000);
+    ws.on('error', () => finish());
+    ws.on('close', () => { clearTimeout(timer); resolve(null); });
   })));
-  return Math.max(0, ...counts); // max-merge across relays = what the board shows
+  // null means fewer than two relay reports; a reported zero is valid evidence.
+  return counts.filter(n => n !== null).sort((a, b) => b - a)[1] ?? null;
 }
 ```
 

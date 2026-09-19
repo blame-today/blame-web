@@ -11,3 +11,13 @@ export const RELAYS = [
 ];
 
 export const TAG = 'pureblameapp';
+
+// A lone relay cannot raise the estimate above every other relay's report.
+// This is corroboration, not signed vote proof; two dishonest relays can agree.
+export function corroboratedCount(samples: Map<string, number>): number | null {
+  const counts = [...samples]
+    .filter(([url, count]) => RELAYS.includes(url) && Number.isSafeInteger(count) && count >= 0)
+    .map(([, count]) => count)
+    .sort((a, b) => b - a);
+  return counts[1] ?? null;
+}

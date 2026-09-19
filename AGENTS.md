@@ -49,7 +49,10 @@ CI runs this full gate on pull requests and before deploying main.
 - Each event is signed with a **fresh throwaway key** (BIP340 schnorr, NIP-01 id) — anonymous by
   construction. See [`src/lib/crypto.ts`](src/lib/crypto.ts) + [`src/lib/nostr.ts`](src/lib/nostr.ts).
 - The **leaderboard** is [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md) `COUNT`
-  across all relays, **max-merged** (relays diverge), with a periodic resync — purely client-side,
+  across all relays, using the **second-highest fresh report from distinct configured URLs**.
+  Fewer than two reports means unavailable. A periodic resync expires old reports even during
+  silence; cache reload restores topics/ownership, never old totals. This is a corroborated
+  estimate, not authenticated vote proof. It remains purely client-side,
   no tally job, no authorized signer (see [`src/lib/store.svelte.ts`](src/lib/store.svelte.ts)).
 - The **News** tab mines headlines **client-side** in the browser (`src/lib/news.svelte.ts`); the
   content **filter** (PII / profanity / gibberish) is in [`src/lib/filter.ts`](src/lib/filter.ts).

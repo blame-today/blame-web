@@ -20,17 +20,21 @@ be acknowledged before its opening vote is sent. After five failed attempts the
 board offers a retry with that same signed event. Queued and failed deliveries live
 only in the current tab; keep it open until pending votes finish.
 
-Counts are relay estimates: the maximum recent snapshot reported by the relays for
-each target and window. A live event or acknowledgement requests a new snapshot; it
+Counts are relay estimates: the second-highest fresh report from distinct configured
+relays, separately for each target and window. Fewer than two reports means unavailable,
+shown as an ellipsis rather than zero. A live event or acknowledgement requests a new snapshot; it
 never adds to the snapshot, so overlapping delivery cannot count twice. A relay can
-correct its estimate downward, and samples older than 90 seconds are removed when
-a fresh count arrives. This is not an exact union across relays. NIP-45 filters the
+correct its estimate downward. Samples older than 90 seconds are removed on a new
+reply or the next 45-second resync, including during silence. This is not an exact union across relays. NIP-45 filters the
 application tag and event kind but cannot filter reaction content. Incoming board
 events are separately checked for shape, application tag, canonical id and signature.
 
-COUNT responses are unsigned relay claims. A dishonest configured relay can inflate its
-estimate; maximum merging does not prove ranking integrity. Use the board as a relay
-view, not a verified vote census.
+COUNT responses are unsigned relay claims. One dishonest relay cannot raise the estimate
+above every honest reported count; it can still influence the result within that range.
+Two dishonest relays can corroborate a false count. Partial coverage and unlimited signed
+voting remain part of this open board, so these estimates are not a verified vote census.
+One relay can accept a vote while its count awaits another response. Mine preserves the
+submitted topic. Old cached totals are discarded on reload; saved topics and ownership remain.
 
 Each tab retains at most 1,000 remote targets plus its owned targets. New targets replace
 the oldest unowned remote target, so a full cached board still receives live topics. Incoming frames

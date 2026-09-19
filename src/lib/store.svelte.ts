@@ -2,6 +2,7 @@
 // persistence. The Nostr layer (nostr.ts), signing (crypto.ts), and content filter (filter.ts)
 // live in their own modules; the view is App.svelte. No protocol details live here.
 import { createRelayPool, signTarget, signVote } from './nostr';
+import { corroboratedCount, RELAYS } from './relays';
 import { nowSec } from './crypto';
 import { checkContent, clip } from './filter';
 import type { NostrEvent, Topic } from './types';
@@ -65,9 +66,9 @@ function get(id: string): Topic | null {
   return i === undefined ? null : store.topics[i];
 }
 
-function addTopic(id: string, txt: string, confirmed = 0, owned = false): boolean {
+function addTopic(id: string, txt: string, owned = false): boolean {
   if (byId.has(id)) return false;
-  const topic = { id, txt, confirmed, hot: 0, pending: 0 };
+  const topic = { id, txt, confirmed: null, hot: null, pending: 0 };
   if (!owned && remoteIds.size >= MAX_REMOTE_TOPICS) {
     // Replace the oldest unowned target so a full cached board can still receive live topics.
     const oldest = remoteIds.values().next().value!;
@@ -106,7 +107,9 @@ export function init(): void {
       if (Array.isArray(saved.t)) {
         for (const row of saved.t) {
           if (!row || typeof row.id !== 'string' || typeof row.txt !== 'string' || !row.txt || checkContent(row.txt)) continue; // drop now-filtered cache
-          addTopic(row.id, row.txt, Number.isSafeInteger(row.vts) && row.vts >= 0 ? row.vts : 0, owned.has(row.id));
+          // Old vts values were unsigned maxima with no source or timestamp.
+          // Keep topics and ownership, but rebuild counts from current replies.
+          addTopic(row.id, row.txt, owned.has(row.id));
         }
       }
       store.mine = store.mine.filter(id => byId.has(id));
@@ -144,7 +147,7 @@ export async function blame(txt: string): Promise<string | undefined> {
     return undefined;
   }
   unpublished.set(ev.id, ev);
-  addTopic(ev.id, clip(txt), 0, true);
+  addTopic(ev.id, clip(txt), true);
   vote(ev.id); // creator's opening blame
   return ev.id;
 }
@@ -181,7 +184,8 @@ function onTarget({ id, text }: { id: string; text: string }): void {
   if (byId.has(id)) return;
   const raw = text.trim();
   if (checkContent(raw)) return; // profanity / PII / gibberish never enters state or storage
-  if (!addTopic(id, clip(raw), 0)) return;
+  if (!addTopic(id, clip(raw))) return;
+  schedulePersist();
   if (started) {
     pool.countAll([id]);
     pool.countAll([id], dayAgo());
@@ -206,18 +210,23 @@ function onReaction({ id, target }: { id: string; target?: string }): void {
   requestCounts(t.id);
 }
 
-// NIP-45 gives relay estimates, not event IDs. Use their maximum; never add live events to it.
-// A fresh snapshot can correct a cached total downward. Expire disconnected relay estimates.
-function onCount(targetId: string, count: number, recent: boolean, relay = 'relay'): void {
+function updateCount(topic: Topic, recent: boolean, now: number): void {
+  const values = snapshots.get(`${topic.id}:${recent}`);
+  if (values) for (const [url, sample] of values) if (now - sample.at > RESYNC_MS * 2) values.delete(url);
+  topic[recent ? 'hot' : 'confirmed'] = corroboratedCount(new Map(
+    [...(values ?? [])].map(([url, sample]) => [url, sample.count]),
+  ));
+}
+
+// Keep one report per configured URL and never add live events to its snapshot.
+function onCount(targetId: string, count: number, recent: boolean, relay: string): void {
   const t = get(targetId);
-  if (!t || !Number.isSafeInteger(count) || count < 0) return;
+  if (!t || !RELAYS.includes(relay) || !Number.isSafeInteger(count) || count < 0) return;
   const key = `${targetId}:${recent}`;
   const values = snapshots.get(key) ?? new Map();
   values.set(relay, { count, at: Date.now() });
-  for (const [url, sample] of values) if (Date.now() - sample.at > RESYNC_MS * 2) values.delete(url);
   snapshots.set(key, values);
-  t[recent ? 'hot' : 'confirmed'] = Math.max(...Array.from(values.values(), sample => sample.count));
-  if (!recent) schedulePersist();
+  updateCount(t, recent, Date.now());
 }
 
 function requestCounts(id: string): void {
@@ -233,8 +242,15 @@ function requestCounts(id: string): void {
 }
 
 function resync(): void {
-  const topConfirmed = [...store.topics].sort((a, b) => b.confirmed - a.confirmed).slice(0, RESYNC_TOP).map((t) => t.id);
-  const topHot = [...store.topics].sort((a, b) => b.hot - a.hot).slice(0, RESYNC_TOP).map((t) => t.id);
+  // Silence must expire a count too; waiting for another reply leaves stale
+  // corroboration on the board indefinitely after honest relays disconnect.
+  const now = Date.now();
+  for (const topic of store.topics) {
+    updateCount(topic, false, now);
+    updateCount(topic, true, now);
+  }
+  const topConfirmed = [...store.topics].sort((a, b) => (b.confirmed ?? 0) - (a.confirmed ?? 0)).slice(0, RESYNC_TOP).map((t) => t.id);
+  const topHot = [...store.topics].sort((a, b) => (b.hot ?? 0) - (a.hot ?? 0)).slice(0, RESYNC_TOP).map((t) => t.id);
   pool.countAll(topConfirmed); // refresh all-time for the leaderboard
   pool.countAll(topHot, dayAgo()); // refresh 24h for "hot today"
 }
@@ -299,7 +315,7 @@ function schedulePersist(): void {
 }
 function persist(): void {
   try {
-    const t = store.topics.map((x) => ({ id: x.id, txt: x.txt, vts: x.confirmed }));
+    const t = store.topics.map((x) => ({ id: x.id, txt: x.txt }));
     localStorage.setItem(DB_KEY, JSON.stringify({ t, mine: store.mine }));
   } catch {}
 }
