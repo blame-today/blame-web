@@ -2,8 +2,12 @@ import { test, expect } from '@playwright/test';
 
 // Relays share an event-id index: replaying an accepted event is idempotent.
 let posted: Map<string, any>;
+let countMode: 'all' | 'forged' | 'single';
+let specialReplies: number;
 test.beforeEach(async ({ page }) => {
   posted = new Map();
+  countMode = 'all';
+  specialReplies = 0;
   await page.routeWebSocket(/.*/, (ws) => {
     ws.onMessage((message) => {
       let p: any;
@@ -15,7 +19,11 @@ test.beforeEach(async ({ page }) => {
       if (p[0] === 'REQ') ws.send(JSON.stringify(['EOSE', p[1]]));
       else if (p[0] === 'COUNT') {
         const f = p[2];
-        const count = [...posted.values()].filter(e => e.kind === 7 && e.tags.some((t: string[]) => t[0] === 'e' && f['#e'].includes(t[1])) && (!f.since || e.created_at >= f.since)).length;
+        const special = new URL(ws.url()).hostname === 'relay.damus.io';
+        if (countMode === 'single' && !special) return;
+        let count = [...posted.values()].filter(e => e.kind === 7 && e.tags.some((t: string[]) => t[0] === 'e' && f['#e'].includes(t[1])) && (!f.since || e.created_at >= f.since)).length;
+        if (countMode === 'forged' && special) count = Number.MAX_SAFE_INTEGER;
+        if (countMode !== 'all' && special) specialReplies++;
         ws.send(JSON.stringify(['COUNT', p[1], { count }]));
       } else if (p[0] === 'EVENT') {
         posted.set(p[1].id, p[1]);
@@ -28,6 +36,33 @@ test.beforeEach(async ({ page }) => {
 
 test('connects to all five relays', async ({ page }) => {
   await expect(page.getByTitle('5 of 5 relays connected')).toBeVisible();
+});
+
+test('one forged relay count cannot inflate the displayed all-time or hot score', async ({ page }) => {
+  countMode = 'forged';
+  await page.getByPlaceholder('Type target to blame...').fill('Broken Printers');
+  await page.getByRole('button', { name: 'Blame', exact: true }).click();
+  const row = page.locator('.divide-y > div').filter({ hasText: 'Broken Printers' });
+  await expect(row.locator('.tabular-nums')).toHaveText('1');
+  await page.getByRole('button', { name: '24h', exact: true }).click();
+  await expect(row.locator('.tabular-nums')).toHaveText('1');
+  expect(specialReplies).toBeGreaterThan(0);
+});
+
+test('one relay can accept a vote while counts wait, then a second relay restores the score', async ({ page }) => {
+  countMode = 'single';
+  await page.getByPlaceholder('Type target to blame...').fill('Broken Printers');
+  await page.getByRole('button', { name: 'Blame', exact: true }).click();
+  const row = page.locator('.divide-y > div').filter({ hasText: 'Broken Printers' });
+  await expect(row.locator('.tabular-nums')).toHaveText('…');
+  await expect(row.getByTitle('votes queued — syncing to relays')).toHaveCount(0);
+  await page.getByRole('button', { name: '24h', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Waiting for counts from two relays. Your submitted blames stay in Mine.');
+  await expect.poll(() => specialReplies).toBeGreaterThan(0);
+  countMode = 'all';
+  await page.getByRole('button', { name: 'Mine', exact: true }).click();
+  await row.getByRole('button', { name: '+1' }).click();
+  await expect(row.locator('.tabular-nums')).toHaveText('2');
 });
 
 test('blaming a target jumps to Mine and counts the opening vote', async ({ page }) => {

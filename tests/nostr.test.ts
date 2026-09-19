@@ -134,3 +134,15 @@ it('accepts only the newest matching relay COUNT and validates its value', async
   await new Promise(resolve => setTimeout(resolve, 10));
   expect(onCount).toHaveBeenCalledTimes(1);
 });
+
+it('a different socket cannot answer or consume another relay count request', async () => {
+  const onCount = vi.fn();
+  const pool = createRelayPool({ onCount }); pool.connect();
+  const [honest, other] = Socket.all;
+  pool.countOn(honest.url, ['target']);
+  const request = JSON.parse(honest.send.mock.calls.at(-1)![0]);
+  other.emit(['COUNT', request[1], { count: 999999 }]);
+  honest.emit(['COUNT', request[1], { count: 8 }]);
+  honest.emit(['COUNT', request[1], { count: 999999 }]);
+  await vi.waitFor(() => expect(onCount).toHaveBeenCalledExactlyOnceWith('target', 8, false, honest.url));
+});

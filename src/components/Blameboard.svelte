@@ -14,22 +14,22 @@
   const visible = $derived.by(() => {
     if (ui.filter === '24h') {
       return store.topics
-        .filter((t) => t.hot > 0)
-        .sort((a, b) => b.hot - a.hot)
+        .filter((t) => (t.hot ?? 0) > 0)
+        .sort((a, b) => (b.hot ?? 0) - (a.hot ?? 0))
         .slice(0, TOP)
         .map((t, i) => ({ ...t, rank: i + 1, count: t.hot, mine: store.mine.includes(t.id) }));
     }
     if (ui.filter === 'mine') {
       return store.topics
         .filter((t) => store.mine.includes(t.id))
-        .sort((a, b) => b.confirmed - a.confirmed)
+        .sort((a, b) => (b.confirmed ?? 0) - (a.confirmed ?? 0))
         .map((t) => ({ ...t, count: t.confirmed })); // no rank — it's your personal list
     }
     return [...store.topics]
       // hide 0-vote cruft (a target created without its opening vote shows up with no
       // count); keep your own so a just-blamed target never vanishes on you mid-sync.
-      .filter((t) => t.confirmed > 0 || store.mine.includes(t.id))
-      .sort((a, b) => b.confirmed - a.confirmed)
+      .filter((t) => (t.confirmed ?? 0) > 0 || store.mine.includes(t.id))
+      .sort((a, b) => (b.confirmed ?? 0) - (a.confirmed ?? 0))
       .slice(0, TOP)
       .map((t, i) => ({ ...t, rank: i + 1, count: t.confirmed, mine: store.mine.includes(t.id) }));
   });
@@ -38,6 +38,8 @@
   const emptyMsg = $derived(
     !store.synced
       ? store.connecting || store.relaysUp > 0 ? 'Loading the board from relays…' : 'Offline. The board will load when a relay reconnects.'
+      : ui.filter !== 'mine' && store.topics.some(t => (ui.filter === '24h' ? t.hot : t.confirmed) === null)
+      ? 'Waiting for counts from two relays. Your submitted blames stay in Mine.'
       : ui.filter === '24h'
       ? 'Nothing hot in the last 24h — go start something.'
       : ui.filter === 'mine'
@@ -69,7 +71,7 @@
          so it doesn't stack under the input on narrow screens) -->
     <div class="p-3 px-4 border-b border-slate-800/60">
       <p class="text-[10px] text-slate-400">Click freely. <span class="text-amber-500/70">↑n</span> = queued. Keep this tab open until votes sync.</p>
-      <p class="mt-1 text-[10px] text-slate-500">Counts are relay estimates, refreshed after votes and every 45 seconds.</p>
+      <p class="mt-1 text-[10px] text-slate-500">Counts need two relays. Votes can sync before counts do. Estimates refresh every 45 seconds.</p>
     </div>
     <div class="divide-y divide-slate-800/60 [&>div:last-child>div]:rounded-b-2xl">
       {#each visible as t (t.id)}

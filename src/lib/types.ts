@@ -1,12 +1,13 @@
 // Shared types for the app.
 
-// A blame target as held in the store. confirmed = all-time votes, hot = votes in the last 24h,
+// A blame target as held in the store. confirmed = all-time estimate, hot = last-24h estimate.
+// null means fewer than two fresh relay reports, not zero votes.
 // pending = votes queued/in-flight (the ↑n badge).
 export type Topic = {
   id: string;
   txt: string;
-  confirmed: number;
-  hot: number;
+  confirmed: number | null;
+  hot: number | null;
   pending: number;
   failed?: number;
 };
@@ -28,7 +29,7 @@ export type RowTopic = {
   txt: string;
   pending: number;
   failed?: number;
-  count: number;
+  count: number | null;
   rank?: number;
   mine?: boolean;
 };
@@ -50,7 +51,7 @@ export type RelayHandlers = {
   onRelayReady?: (url: string) => void;
   onTarget?: (target: { id: string; text: string }) => void;
   onReaction?: (reaction: { id: string; target?: string }) => void;
-  onCount?: (targetId: string, count: number, recent: boolean, relay?: string) => void;
+  onCount?: (targetId: string, count: number, recent: boolean, relay: string) => void;
 };
 
 // The command surface the store drives the relay layer through.

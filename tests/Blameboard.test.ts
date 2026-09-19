@@ -21,9 +21,21 @@ beforeEach(() => {
     { id: 'c', txt: 'Brunch', confirmed: 5, hot: 0, pending: 0 },
   ];
   mock.store.mine = ['b'];
+  mock.store.synced = true;
 });
 
 describe('Blameboard', () => {
+  it('explains a sparse-relay wait and preserves submitted topics in Mine without showing a false zero', async () => {
+    mock.store.topics = [{ id: 'a', txt: 'Mondays', confirmed: null, hot: null, pending: 0 }];
+    mock.store.mine = ['a'];
+    ui.filter = '24h';
+    render(Blameboard);
+    expect(screen.getByRole('status')).toHaveTextContent('Waiting for counts from two relays');
+    await fireEvent.click(screen.getByText('Mine'));
+    expect(screen.getByText('Mondays')).toBeInTheDocument();
+    expect(screen.getByTitle('waiting for counts from two relays')).toHaveTextContent('…');
+  });
+
   it('shows the per-filter sub label with All / 24h / Mine / News filters', () => {
     // the "Blameboard" title was trimmed (b651f79); the header shows the
     // sub label instead ("top 100" / "yours" / "in the news").
