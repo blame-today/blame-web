@@ -19,6 +19,57 @@ afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 const target = (id = 'target', text = 'Traffic') => h.handlers.onTarget({ id, text });
 const sent = () => h.pool.publish.mock.calls.map(call => call[0]);
 
+it('bounds remote topics before and after EOSE while retaining live admission and owned pending topics', async () => {
+  h.pool.anyOpen.mockReturnValue(false);
+  for (let n = 0; n < 1500; n++) target(`remote-${n}`);
+  expect(m.store.topics).toHaveLength(1000);
+  h.handlers.onRelayReady('relay');
+  expect(h.pool.countOn.mock.calls.every(call => call[1].length === 1000)).toBe(true);
+  for (let n = 1500; n < 3000; n++) target(`remote-${n}`);
+  expect(m.store.topics).toHaveLength(1000);
+  expect(m.store.topics.some(t => t.id === 'remote-2999')).toBe(true);
+  expect(m.store.topics.some(t => t.id === 'remote-0')).toBe(false);
+  h.pool.countAll.mockClear();
+  const mine = await m.blame('Weather');
+  expect(m.store.mine).toContain(mine);
+  expect(m.store.topics.find(t => t.id === mine)).toMatchObject({ pending: 1 });
+  m.vote('remote-2999'); // ownership frees one remote slot without discarding the topic
+  target('new-remote', 'Taxes');
+  expect(m.store.topics).toHaveLength(1002);
+  expect(h.pool.countAll).toHaveBeenCalledTimes(2);
+  await m.blame('weather'); // text lookup still resolves the owned topic
+  expect(m.store.topics).toHaveLength(1002);
+  expect(m.store.topics.find(t => t.id === mine)).toMatchObject({ pending: 2 });
+  await vi.advanceTimersByTimeAsync(500);
+  expect(JSON.parse(localStorage.getItem('blm_v8')!).t).toHaveLength(1002);
+});
+
+it('eviction clears snapshots and repairs text lookup without removing owned topics', async () => {
+  h.pool.anyOpen.mockReturnValue(false);
+  target('first', 'Traffic'); target('second', 'Traffic');
+  h.handlers.onCount('first', 100, false, 'relay');
+  for (let n = 0; n < 999; n++) target(`remote-${n}`, 'Taxes');
+  expect(m.store.topics.some(t => t.id === 'first')).toBe(false);
+  expect(await m.blame('traffic')).toBe('second');
+  for (let n = 999; n < 2100; n++) target(`remote-${n}`, 'Taxes');
+  expect(m.store.topics.find(t => t.id === 'second')).toMatchObject({ pending: 1 });
+  target('first', 'Traffic');
+  h.handlers.onCount('first', 1, false, 'another-relay');
+  expect(m.store.topics.find(t => t.id === 'first')?.confirmed).toBe(1);
+});
+
+it('bounds restored remote topics even when owned entries follow an oversized old cache', () => {
+  const t = Array.from({ length: 3000 }, (_, n) => ({ id: `saved-${n}`, txt: 'Traffic', vts: 1 }));
+  t.push({ id: 'owned', txt: 'Weather', vts: 7 });
+  localStorage.setItem('blm_v8', JSON.stringify({ t, mine: ['owned'] }));
+  m.init();
+  expect(m.store.topics).toHaveLength(1001);
+  expect(m.store.topics.find(topic => topic.id === 'owned')).toMatchObject({ confirmed: 7 });
+  expect(m.store.mine).toEqual(['owned']);
+  h.handlers.onRelayReady('relay');
+  expect(h.pool.countOn.mock.calls.every(call => call[1].length === 1001)).toBe(true);
+});
+
 it('sends a target before its opening vote, then refreshes relay counts', async () => {
   let accept!: (value: boolean) => void;
   h.pool.waitOk.mockImplementationOnce(() => new Promise(resolve => { accept = resolve; }));

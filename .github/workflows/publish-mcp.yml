@@ -12,15 +12,20 @@ on:
 
 jobs:
   publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install mcp-publisher
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          curl --fail --location --silent --show-error -o mcp-publisher.tar.gz https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz
+          echo 'a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher.tar.gz' | sha256sum --check --strict
+          tar xzf mcp-publisher.tar.gz mcp-publisher
 
       - name: Skip if this version is already published
         id: guard
@@ -37,7 +42,9 @@ jobs:
 
       - name: Authenticate to MCP Registry (DNS)
         if: steps.guard.outputs.skip == 'false'
-        run: ./mcp-publisher login dns --domain blame.today --private-key "${{ secrets.MCP_DNS_PRIVATE_KEY }}"
+        env:
+          MCP_DNS_PRIVATE_KEY: ${{ secrets.MCP_DNS_PRIVATE_KEY }}
+        run: ./mcp-publisher login dns --domain blame.today --private-key "$MCP_DNS_PRIVATE_KEY"
 
       - name: Validate and publish
         if: steps.guard.outputs.skip == 'false'

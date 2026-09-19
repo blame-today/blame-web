@@ -8,6 +8,7 @@ import type { NostrEvent, Topic } from './types';
 
 const DB_KEY = 'blm_v8';
 const TOP_N = 100;
+const MAX_REMOTE_TOPICS = 1000;
 const RESYNC_MS = 45000;
 const RESYNC_TOP = 150;
 const DAY = 86400; // "hot" window: votes in the last 24h
@@ -15,7 +16,7 @@ const MAX_VOTE_ATTEMPTS = 5; // give up on a vote after this many rejections so 
 
 export const TOP = TOP_N;
 
-// Reactive state read by the view. Topics stay in insertion order (never reordered here);
+// Reactive state read by the view. Remote slots are reused when their budget is full;
 // the view derives the sorted top-N. confirmed = all-time count, hot = last-24h count,
 // pending = queued/in-flight. `mine` = ids you've voted on (pinned in "Your Blames").
 export const store = $state<{
@@ -34,7 +35,8 @@ export const store = $state<{
   connecting: true,
 });
 
-const byId = new Map<string, number>(); // id -> index into store.topics (stable; never reordered)
+const byId = new Map<string, number>(); // id -> slot in store.topics
+const remoteIds = new Set<string>(); // owned topics do not consume the relay admission budget
 const idxByText = new Map<string, string>(); // normalized text -> id (dedup blames by text)
 // Dedup relay echoes before requesting a recount. Live events never add to a COUNT snapshot.
 const seen = new Map<string, 1>();
@@ -63,12 +65,34 @@ function get(id: string): Topic | null {
   return i === undefined ? null : store.topics[i];
 }
 
-function addTopic(id: string, txt: string, confirmed = 0): void {
-  if (byId.has(id)) return;
-  store.topics.push({ id, txt, confirmed, hot: 0, pending: 0 });
-  byId.set(id, store.topics.length - 1);
+function addTopic(id: string, txt: string, confirmed = 0, owned = false): boolean {
+  if (byId.has(id)) return false;
+  const topic = { id, txt, confirmed, hot: 0, pending: 0 };
+  if (!owned && remoteIds.size >= MAX_REMOTE_TOPICS) {
+    // Replace the oldest unowned target so a full cached board can still receive live topics.
+    const oldest = remoteIds.values().next().value!;
+    const slot = byId.get(oldest)!;
+    const oldKey = store.topics[slot].txt.toLowerCase();
+    store.topics[slot] = topic;
+    byId.delete(oldest);
+    byId.set(id, slot);
+    remoteIds.delete(oldest);
+    snapshots.delete(`${oldest}:false`);
+    snapshots.delete(`${oldest}:true`);
+    recount.delete(oldest);
+    if (idxByText.get(oldKey) === oldest) {
+      idxByText.delete(oldKey);
+      const other = store.topics.find(t => t.txt.toLowerCase() === oldKey);
+      if (other) idxByText.set(oldKey, other.id);
+    }
+  } else {
+    store.topics.push(topic);
+    byId.set(id, store.topics.length - 1);
+  }
+  if (!owned) remoteIds.add(id);
   const key = txt.toLowerCase();
   if (!idxByText.has(key)) idxByText.set(key, id);
+  return true;
 }
 
 // ---- Public API ----
@@ -77,13 +101,15 @@ export function init(): void {
   try {
     const saved = JSON.parse(localStorage.getItem(DB_KEY) || 'null');
     if (saved) {
-      if (Array.isArray(saved.mine)) store.mine = saved.mine;
+      if (Array.isArray(saved.mine)) store.mine = [...new Set<string>(saved.mine.filter((id: unknown) => typeof id === 'string'))];
+      const owned = new Set(store.mine);
       if (Array.isArray(saved.t)) {
         for (const row of saved.t) {
-          if (!row || !row.txt || checkContent(row.txt)) continue; // drop now-filtered cache
-          addTopic(row.id, row.txt, row.vts || 0);
+          if (!row || typeof row.id !== 'string' || typeof row.txt !== 'string' || !row.txt || checkContent(row.txt)) continue; // drop now-filtered cache
+          addTopic(row.id, row.txt, Number.isSafeInteger(row.vts) && row.vts >= 0 ? row.vts : 0, owned.has(row.id));
         }
       }
+      store.mine = store.mine.filter(id => byId.has(id));
     }
   } catch {}
   pool.connect();
@@ -96,6 +122,7 @@ export function vote(id: string): void {
   t.pending += 1; // affects the ↑n badge only — never the count or the order
   if (!store.mine.includes(id)) {
     store.mine.push(id); // remember it's yours
+    remoteIds.delete(id);
     schedulePersist();
   }
   queue.push({ id, failures: 0 });
@@ -117,7 +144,7 @@ export async function blame(txt: string): Promise<string | undefined> {
     return undefined;
   }
   unpublished.set(ev.id, ev);
-  addTopic(ev.id, clip(txt), 0);
+  addTopic(ev.id, clip(txt), 0, true);
   vote(ev.id); // creator's opening blame
   return ev.id;
 }
@@ -154,7 +181,7 @@ function onTarget({ id, text }: { id: string; text: string }): void {
   if (byId.has(id)) return;
   const raw = text.trim();
   if (checkContent(raw)) return; // profanity / PII / gibberish never enters state or storage
-  addTopic(id, clip(raw), 0);
+  if (!addTopic(id, clip(raw), 0)) return;
   if (started) {
     pool.countAll([id]);
     pool.countAll([id], dayAgo());

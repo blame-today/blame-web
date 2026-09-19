@@ -55,6 +55,10 @@ export async function publishHit(): Promise<void> {
 }
 
 type Conn = { ws: WebSocket; loaded: boolean };
+const MAX_FRAME_BYTES = 128 * 1024;
+const MAX_QUEUED_BYTES = 1024 * 1024;
+const MAX_QUEUED_FRAMES = 1024; // admit the requested 1,000-event initial page plus its EOSE
+const MAX_COUNT_SUBS = 12000; // 1,000 remote topics, two windows, across the five relays, plus owned topics
 
 // Create the relay pool. `handlers` receives only parsed domain events:
 //   onStatus(up, loaded) · onRelayReady(url) · onTarget({id,text}) ·
@@ -87,24 +91,51 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
       ws.send(JSON.stringify(['REQ', 'tg', { kinds: [1], '#t': [TAG], limit: 1000 }])); // topic list
       emitStatus();
     };
-    // Verification is asynchronous; keep EOSE behind the events it terminates.
-    let frames = Promise.resolve();
+    // Bound admission before asynchronous verification retains any data. EOSE remains behind
+    // accepted events. An overflowing relay reconnects instead of dropping events silently.
+    const frames: { text: string; bytes: number }[] = [];
+    let queuedBytes = 0;
+    let processing = false;
+    async function drainFrames(): Promise<void> {
+      processing = true;
+      try {
+        while (frames.length && conns[url]?.ws === ws && ws.readyState === 1) {
+          const frame = frames.shift()!;
+          queuedBytes -= frame.bytes;
+          try { await onFrame(url, ws, frame.text); }
+          catch (error) { console.warn('relay message failed', error); }
+        }
+      } finally { processing = false; }
+    }
     ws.onmessage = (m) => {
-      frames = frames.then(() => conns[url]?.ws === ws ? onFrame(url, m) : undefined).catch(error => console.warn('relay message failed', error));
+      if (ws.readyState !== 1 || conns[url]?.ws !== ws) return;
+      if (typeof m.data !== 'string' || m.data.length > MAX_FRAME_BYTES) { ws.close(1009, 'frame too large'); return; }
+      const bytes = new TextEncoder().encode(m.data).byteLength;
+      if (bytes > MAX_FRAME_BYTES) { ws.close(1009, 'frame too large'); return; }
+      if (frames.length >= MAX_QUEUED_FRAMES || queuedBytes + bytes > MAX_QUEUED_BYTES) { ws.close(1008, 'relay backlog'); return; }
+      frames.push({ text: m.data, bytes });
+      queuedBytes += bytes;
+      if (!processing) void drainFrames();
     };
     ws.onclose = () => {
-      if (conns[url]) conns[url].loaded = false;
+      frames.length = 0;
+      queuedBytes = 0;
+      if (conns[url]?.ws !== ws) return;
+      conns[url].loaded = false;
+      for (const [sub, meta] of countSubs) if (meta.relay === url) {
+        countSubs.delete(sub);
+        if (latestCount.get(meta.key) === sub) latestCount.delete(meta.key);
+      }
       emitStatus();
       setTimeout(() => open(url), 2000);
     };
     ws.onerror = () => {};
   }
 
-  async function onFrame(url: string, m: MessageEvent): Promise<void> {
-    if (typeof m.data !== 'string' || m.data.length > 131072) return;
+  async function onFrame(url: string, ws: WebSocket, text: string): Promise<void> {
     let p: any;
     try {
-      p = JSON.parse(m.data);
+      p = JSON.parse(text);
     } catch {
       return;
     }
@@ -139,6 +170,7 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
         const target = e.tags.filter(tag => tag[0] === 'e').at(-1)?.[1];
         if (e.kind === 7 && (e.content !== '💥' || !target || !/^[a-f0-9]{64}$/.test(target))) return;
         if (!await verifyEvent(e)) return;
+        if (conns[url]?.ws !== ws || ws.readyState !== 1) return;
         if (e.kind === 1) handlers.onTarget?.({ id: e.id, text: e.content });
         else handlers.onReaction?.({ id: e.id, target });
         return;
@@ -165,8 +197,11 @@ export function createRelayPool(handlers: RelayHandlers = {}): RelayPool {
         if (latestCount.get(meta.key) === sub) latestCount.delete(meta.key);
       }
     }
-    const sub = 'c' + ++countN;
     const key = `${url}:${targetId}:${since !== undefined}`;
+    const previous = latestCount.get(key);
+    if (previous) countSubs.delete(previous);
+    if (countSubs.size >= MAX_COUNT_SUBS) return;
+    const sub = 'c' + ++countN;
     latestCount.set(key, sub);
     countSubs.set(sub, { id: targetId, recent: since !== undefined, at: now, relay: url, key });
     const filter: Record<string, unknown> = { kinds: [7], '#e': [targetId], '#t': [TAG] };

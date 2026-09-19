@@ -6,6 +6,8 @@
 // Folded in from the old standalone blame-mcp worker 2026-06-16: a one-tool pointer never needed
 // its own DO-backed McpAgent. Mirrors the stateless JSON-RPC shape lifescore uses for its /mcp.
 
+import { BodyTooLarge, readJson } from "./read-json.js";
+
 // The self-serve kit the tool returns. Kept verbatim in sync with /agents, llms.txt, and the
 // droppable skill (all version-stamped). The VERSION line is the staleness signal for agents —
 // only bump it when the RECIPE logic changes, not when this file moves.
@@ -100,6 +102,7 @@ const err = (id, code, message) => ({ jsonrpc: "2.0", id, error: { code, message
 // Handle one JSON-RPC message. Returns a response object, or null for notifications (no state to
 // mutate, so we just ack at the HTTP layer).
 export function handleRpc(msg) {
+  if (msg === null || typeof msg !== "object" || Array.isArray(msg)) return err(null, -32600, "Invalid Request");
   const isNotification = msg.id === undefined;
   const { id, method, params } = msg;
 
@@ -146,12 +149,15 @@ export async function handleMcp(request) {
 
   let payload;
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readJson(request, 64 * 1024);
+  } catch (error) {
+    if (error instanceof BodyTooLarge) return jsonResponse(err(null, -32600, "Request exceeds 64 KiB"), 413);
     return jsonResponse(err(null, -32700, "Parse error"), 200);
   }
 
   const batch = Array.isArray(payload);
+  if (batch && payload.length > 16) return jsonResponse(err(null, -32600, "Batch exceeds 16 messages"), 413);
+  if (batch && payload.length === 0) return jsonResponse(err(null, -32600, "Invalid Request: empty batch"), 200);
   const messages = batch ? payload : [payload];
   const responses = messages.map(handleRpc).filter((r) => r !== null);
 
