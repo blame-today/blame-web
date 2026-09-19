@@ -28,6 +28,17 @@ a fresh count arrives. This is not an exact union across relays. NIP-45 filters 
 application tag and event kind but cannot filter reaction content. Incoming board
 events are separately checked for shape, application tag, canonical id and signature.
 
+COUNT responses are unsigned relay claims. A dishonest configured relay can inflate its
+estimate; maximum merging does not prove ranking integrity. Use the board as a relay
+view, not a verified vote census.
+
+Each tab retains at most 1,000 remote targets plus its owned targets. New targets replace
+the oldest unowned remote target, so a full cached board still receives live topics. Incoming frames
+are limited to 128 KiB, with at most 1,024 frames / 1 MiB waiting for verification per
+relay. A relay that overflows that queue is disconnected and retried. Unanswered COUNT
+requests are capped at 12,000 across the pool and superseded requests are removed.
+These are client resource limits; they do not change which events relays accept.
+
 ```
 npm install
 npm run dev      # vite dev server

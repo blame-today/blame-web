@@ -49,6 +49,47 @@ describe("handleMcp (HTTP wrapper)", () => {
   const post = (body: unknown) =>
     handleMcp(new Request("https://blame.today/mcp", { method: "POST", body: JSON.stringify(body) }));
 
+  it("bounds batches and body bytes before generating recipes", async () => {
+    const message = rpc("tools/call", { name: "get_blame_recipe" });
+    for (const count of [1, 15, 16]) {
+      const response = await post(Array(count).fill(message));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toHaveLength(count);
+    }
+    for (const body of [Array(17).fill(message), { ...message, padding: "x".repeat(65536) }]) {
+      const response = await post(body);
+      expect(response.status).toBe(413);
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
+      expect((await response.json()).error.code).toBe(-32600);
+    }
+  });
+
+  it("rejects invalid batch members and empty batches without throwing", async () => {
+    const response = await post([null, false, 1, [], rpc("ping")]);
+    const messages = await response.json();
+    expect(messages.slice(0, 4).map((m: any) => m.error.code)).toEqual([-32600, -32600, -32600, -32600]);
+    expect(messages[4].result).toEqual({});
+    expect((await (await post([])).json()).error.code).toBe(-32600);
+  });
+
+  it("counts chunked multibyte data without trusting Content-Length", async () => {
+    for (const length of [undefined, "1"]) {
+      let cancelled = false;
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"padding":"'));
+          controller.enqueue(new TextEncoder().encode("é".repeat(33000)));
+        },
+        cancel() { cancelled = true; }
+      });
+      const response = await handleMcp(new Request("https://blame.today/mcp", {
+        method: "POST", body, duplex: "half", headers: length ? { "content-length": length } : {}
+      } as RequestInit));
+      expect(response.status).toBe(413);
+      expect(cancelled).toBe(true);
+    }
+  });
+
   it("OPTIONS is a 204 CORS preflight", async () => {
     const res = await handleMcp(new Request("https://blame.today/mcp", { method: "OPTIONS" }));
     expect(res.status).toBe(204);

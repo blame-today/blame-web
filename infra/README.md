@@ -42,7 +42,16 @@ hush exec -- tofu -chdir=infra apply    # apply it
 ```
 
 (No hush? `export CLOUDFLARE_API_TOKEN=… AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=…` then run
-`tofu` directly. In CI the same three come from GH secrets, see `.github/workflows/infra.yml`.)
+`tofu` directly. In CI the same three come from the `infrastructure` GitHub environment.)
+
+## CI boundary
+
+PRs run `init -backend=false -lockfile=readonly` and `validate` without state or cloud
+credentials. Review a local plan through hush before merging. Main pushes and manual runs
+from main apply using the `infrastructure` environment, which must allow the `main` branch only.
+Store `TF_CLOUDFLARE_API_TOKEN`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` in that environment
+and remove repository-level copies after verifying the environment secrets. Otherwise another
+PR workflow can still access them. See `.github/workflows/infra.yml`.
 
 ## state
 
