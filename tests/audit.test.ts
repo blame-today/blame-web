@@ -69,4 +69,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-09-30: blocks the flagged vulgar entries', () => {
+    for (const t of ["the jews","Izetbegovic","Your ma"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
