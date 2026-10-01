@@ -74,4 +74,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-10-01: blocks the flagged vulgar entries', () => {
+    for (const t of ["Helen ko"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
