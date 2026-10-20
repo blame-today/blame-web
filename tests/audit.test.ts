@@ -79,4 +79,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-10-20: blocks the flagged vulgar entries', () => {
+    for (const t of ["Roy Ashbrook","Jason Santos","Messi","Jay Clayton","Vibe Coding","Moscow"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
