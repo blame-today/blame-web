@@ -68,6 +68,7 @@ const BLOCK: RegExp[] = [
   /Jay Clayton/i, // audited 2026-10-20
   /Vibe Coding/i, // audited 2026-10-20
   /Moscow/i, // audited 2026-10-20
+  /slow drain/i, // audited 2026-11-24
   // audit:end
 ];
 const hasBlocked = (txt: string): boolean => BLOCK.some((re) => re.test(txt));

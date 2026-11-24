@@ -84,4 +84,9 @@ describe('audited vulgar blocklist', () => {
       expect(checkContent(t)).toBe('No bad words!');
     }
   });
+  it('audit 2026-11-24: blocks the flagged vulgar entries', () => {
+    for (const t of ["slow drain"]) {
+      expect(checkContent(t)).toBe('No bad words!');
+    }
+  });
 });
